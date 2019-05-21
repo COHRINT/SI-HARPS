@@ -4,9 +4,76 @@ from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
 import sys,os
 
-import numpy as np
-import time
+import sys
 import yaml
+import rospy
+import struct
+import array
+import time
+import os
+from std_msgs.msg import String
+from airsim_bridge.srv import *
+# from observation_interface.msg import *
+
+# For viewing the image topic
+import cv2
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+
+import numpy as np
+
+
+
+class droneThread(QThread):
+	dronePixMap = pyqtSignal(QImage)
+
+	def __init__(self, parent=None):
+		QThread.__init__(self, parent)
+
+		self.drone_name = 'Drone 1'
+		self.name = "Drone Video"
+		self.service_name = '/get_camera_view'
+		self.size = (500,350)
+		self.img = 'placeholder.png'
+		self.format = QImage.Format_RGB888
+
+		rospy.init_node('camera_view_client')
+
+	def run(self):
+		self.running = True
+
+		rospy.wait_for_service(self.service_name)
+		camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
+
+		while self.running:
+
+			print("Running loop")
+
+			self.new_image = camera_image(0, 'lit')
+
+			msg = self.new_image.image
+			image_data = msg.data
+			image_height = msg.height
+			image_width = msg.width
+			bytes_per_line = msg.step
+
+			# convert image from little endian BGR to big endian RGB
+			length = int(len(image_data)/2)
+			# # unpack data into array
+			unpacked_data = array.array('H',image_data)
+			# # swap bytes (to swap B and R)
+			unpacked_data.byteswap() # causes strange vertical line artifacts
+			unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+			# # repack with opposite endian format
+			# unpacked_data.reverse()
+			image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+
+			self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
+
+			self.image = self.image.mirrored(True,True)
+
+			self.dronePixMap.emit(self.image)
+			
 
 
 class SimulationWindow(QWidget):
@@ -30,6 +97,10 @@ class SimulationWindow(QWidget):
 		self.setWindowState(Qt.WindowMaximized);
 		#self.show();
 
+	@pyqtSlot(QImage)
+	def setDroneImage(self, image):
+		self.cameraFeed.setPixmap(QPixmap(image))
+
 	def populateInterface(self):
 		
 
@@ -44,12 +115,16 @@ class SimulationWindow(QWidget):
 
 
 		#cameraFeed = QPushButton("Cameras"); 
-		cameraFeed = QLabel(); 
-		cameraFeed.setPixmap(QPixmap("droneView.png")); 
-		cameraFeed.setScaledContents(True); 
-		cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		cameraFeed.setStyleSheet("border:3px solid blue")
-		self.layout.addWidget(cameraFeed,1,16,8,14) 
+		self.cameraFeed = QLabel(); 
+		self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
+		self.cameraFeed.setScaledContents(True); 
+		self.cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed.setStyleSheet("border:3px solid blue")
+		self.layout.addWidget(self.cameraFeed,1,16,8,14)
+
+		th = droneThread()
+		th.dronePixMap.connect(self.setDroneImage)
+		th.start()
 
 
 		humanPush = QPushButton("HumanPush"); 
