@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *; 
 from PyQt5.QtGui import *;
@@ -6,6 +8,7 @@ import sys,os
 
 import sys
 import yaml
+<<<<<<< HEAD
 import rospy
 import struct
 import array
@@ -74,9 +77,19 @@ class droneThread(QThread):
 
 			self.dronePixMap.emit(self.image)
 			
+=======
+import signal
+import rospy
+>>>>>>> a24868ff94637d82a4b8b1720d4f0c77822e573d
 
+def signal_handler(signal, frame):
+		print 'You pressed Ctrl+C!'
+		sys.exit(0)
+		
+signal.signal(signal.SIGINT, signal_handler)
 
 class SimulationWindow(QWidget):
+	opacity_slide = pyqtSignal()
 
 	def __init__(self):
 
@@ -102,7 +115,6 @@ class SimulationWindow(QWidget):
 		self.cameraFeed.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
-		
 
 		minimap = QLabel(); 
 		pix = QPixmap('overhead.png'); 
@@ -115,6 +127,7 @@ class SimulationWindow(QWidget):
 
 
 		#cameraFeed = QPushButton("Cameras"); 
+<<<<<<< HEAD
 		self.cameraFeed = QLabel(); 
 		self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
 		self.cameraFeed.setScaledContents(True); 
@@ -125,6 +138,43 @@ class SimulationWindow(QWidget):
 		th = droneThread()
 		th.dronePixMap.connect(self.setDroneImage)
 		th.start()
+=======
+		cameraFeed1 = QLabel(); 
+		cameraFeed2 = QLabel(); 
+
+		self.cameraTabs = QTabWidget();
+		self.tab1 = QWidget()
+		self.tab2 = QWidget()
+		self.tab3 = QWidget()
+		self.tab4 = QWidget()
+		self.tab5 = QWidget()
+		cameraFeed1.setScaledContents(True); 
+		cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		#self.cameraTabs.setStyleSheet("border:3px solid blue")
+		cameraFeed1.setPixmap(QPixmap("droneView.png"))
+
+		cameraFeed2.setScaledContents(True); 
+		cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		cameraFeed2.setPixmap(QPixmap("overhead.png"))
+
+		self.cameraTabs.addTab(self.tab1,"Cam 1")
+		self.cameraTabs.addTab(self.tab2,"Cam 2")
+		self.cameraTabs.addTab(self.tab3,"Cam 3")
+		self.cameraTabs.addTab(self.tab4,"Cam 4")
+		self.cameraTabs.addTab(self.tab5,"Drone")
+
+		self.tab1.layout = QVBoxLayout(self)
+		self.tab1.layout.addWidget(cameraFeed1); 
+		self.tab1.setLayout(self.tab1.layout)
+
+		self.tab2.layout = QVBoxLayout(self)
+		self.tab2.layout.addWidget(cameraFeed2); 
+		self.tab2.setLayout(self.tab2.layout)
+
+		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
+		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
+
+>>>>>>> a24868ff94637d82a4b8b1720d4f0c77822e573d
 
 
 		humanPush = QPushButton("HumanPush"); 
@@ -146,21 +196,25 @@ class SimulationWindow(QWidget):
 
 
 		sliderLayout = QGridLayout(); 
-		beliefOpacitySlider = QSlider(Qt.Horizontal); 
-		beliefOpacitySlider.setSliderPosition(30)
-		beliefOpacitySlider.setTickPosition(QSlider.TicksBelow)
-		beliefOpacitySlider.setTickInterval(10); 
-		sliderLayout.addWidget(beliefOpacitySlider,0,0); 
+		self.beliefOpacitySlider = QSlider(Qt.Horizontal); 
+		self.beliefOpacitySlider.setSliderPosition(30)
+		self.beliefOpacitySlider.setTickPosition(QSlider.TicksBelow)
+		self.beliefOpacitySlider.setTickInterval(10); 
+		self.beliefOpacitySlider.valueChanged.connect(self.belief_opacity_client)
+
+		sliderLayout.addWidget(self.beliefOpacitySlider,0,0); 
 		#self.layout.addWidget(self.beliefOpacitySlider,16,0,1,1); 
 		belLabel = QLabel("Belief Opacity"); 
 		belLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(belLabel,0,1,1,2); 
 
-		sketchOpacitySlider = QSlider(Qt.Horizontal); 
-		sketchOpacitySlider.setSliderPosition(70); 
-		sketchOpacitySlider.setTickPosition(QSlider.TicksBelow); 
-		sketchOpacitySlider.setTickInterval(10); 
-		sliderLayout.addWidget(sketchOpacitySlider,1,0); 
+		self.sketchOpacitySlider = QSlider(Qt.Horizontal); 
+		self.sketchOpacitySlider.setSliderPosition(70); 
+		self.sketchOpacitySlider.setTickPosition(QSlider.TicksBelow); 
+		self.sketchOpacitySlider.setTickInterval(10); 
+		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
+
+		sliderLayout.addWidget(self.sketchOpacitySlider,1,0); 
 		#self.layout.addWidget(self.sketchOpacitySlider,17,0,1,1); 
 		sketchOLabel = QLabel("Sketch Opacity"); 
 		sketchOLabel.setAlignment(Qt.AlignLeft); 
@@ -172,12 +226,22 @@ class SimulationWindow(QWidget):
 
 	def keyPressEvent(self,event):
 		#print("ENTER KEY")
-		if(event.key() == QtCore.Qt.Key_A):
+		if(event.key() == QtCore.Qt.Key_Space):
 			#print("ENTER KEY")
 			dialog = QMessageBox(); 
 			dialog.setText('The Video would now pause'); 
 			dialog.exec_(); 
 
+	def belief_opacity_client(self):
+		 painter = QPainter()
+		 print self.beliefOpacitySlider.value()
+		 #painter.setOpacity(self.beliefOpacity)
+	def sketch_opacity_client(self):
+		 painter = QPainter()
+		 print self.sketchOpacitySlider.value()
+		 #painter.setOpacity(self.beliefOpacity)
+	def camera_switch_client(self):
+		 print self.cameraTabs.currentIndex()
 
 	def closeEvent(self,event):
 		dialog = QMessageBox(); 
@@ -196,10 +260,14 @@ class SimulationWindow(QWidget):
 
 			if(dialog.clickedButton().text() == "Yes"):
 				event.ignore(); 
+	
+def main():
+		app = QApplication(sys.argv)
+		coretools_app = SimulationWindow()
+		signal.signal(signal.SIGINT, lambda *a: app.quit())
+		app.startTimer(200)
+
+		sys.exit(app.exec_())
 
 if __name__ == '__main__':
-
-
-	app = QApplication(sys.argv); 
-	ex = SimulationWindow(); 
-	sys.exit(app.exec_()); 
+		main()
