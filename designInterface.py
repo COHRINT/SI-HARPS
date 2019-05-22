@@ -6,6 +6,10 @@ from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
 import sys,os
 
+from topic_tools.srv import *
+from planeFunctions import *
+from interfaceFunctions import *
+
 import numpy as np
 import time
 import yaml
@@ -13,10 +17,47 @@ import signal
 import rospy
 
 def signal_handler(signal, frame):
-		print 'You pressed Ctrl+C!'
-		sys.exit(0)
+	print 'You pressed Ctrl+C!'
+	sys.exit(0)
 		
 signal.signal(signal.SIGINT, signal_handler)
+
+
+def imageMousePress(QMouseEvent,wind):
+	wind.sketchListen=True;
+	wind.allSketchPaths.append([]); 
+
+	tmp = [QMouseEvent.x(),QMouseEvent.y()]; 
+ 
+	if(wind.sketchListen):
+		wind.sketchingInProgress = True; 
+		name = 'tru'; 
+		if(name not in wind.allSketchPlanes.keys()):
+			wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
+		
+			wind.allSketchNames.append(name); 
+		else:
+			planeFlushPaint(wind.allSketchPlanes[name],[]);
+
+def imageMouseMove(QMouseEvent,wind):
+	if(wind.sketchingInProgress):
+		tmp = [int(QMouseEvent.x()),int(QMouseEvent.y())]; 
+		wind.allSketchPaths[-1].append(tmp); 
+		#add points to be sketched
+		points = []; 
+		si = wind.sketchDensity;
+		for i in range(-si,si+1):
+			for j in range(-si,si+1):
+				points.append([tmp[0]+i,tmp[1]+j]); 
+
+		name = 'tru'
+		planeAddPaint(wind.allSketchPlanes[name],points); 
+
+def imageMouseRelease(QMouseEvent,wind):
+	if(wind.sketchingInProgress):
+		print 'A new sketch, hazzah!'
+		name = "tru"
+	#updateModels(wind, tru)
 
 class SimulationWindow(QWidget):
 	opacity_slide = pyqtSignal()
@@ -35,24 +76,45 @@ class SimulationWindow(QWidget):
 		self.setStyleSheet("background-color:slategray;")
 		self.populateInterface(); 
 
+		self.make_connections();
 		self.showMaximized();
 
 		self.setWindowState(Qt.WindowMaximized);
+
+		#Sketching Params
+		self.sketchListen=False; 
+		self.sketchingInProgress = False; 
+		self.allSketches = {}; 
+		self.allSketchNames = []; 
+		self.allSketchPaths = []; 
+		self.allSketchPlanes = {}; 
+		self.sketchLabels = {}; 
+		self.sketchDensity = 3; #radius in pixels of drawn sketch points
 		#self.show();
 
 	def populateInterface(self):
 
-		minimap = QLabel(); 
+		#Minimap ---------------------------
+		self.minimapView = QGraphicsView(self); 
+		self.minimapScene = QGraphicsScene(self); 
+
+		#make sketchPlane
+		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
+
+
+#		self.minimap = QGraphicsScene(); 
 		pix = QPixmap('overhead.png'); 
-		minimap.setPixmap(pix); 
-		minimap.setScaledContents(True); 
-		minimap.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		minimap.setStyleSheet("border:3px solid red")
-		self.layout.addWidget(minimap,1,1,14,13);
+		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+		self.minimapView.fitInView(self.sketchPlane); 
+
+		#map plane
+		self.mapPlane = self.minimapScene.addPixmap(pix);
+		self.minimapView.setScene(self.minimapScene); 
+		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 
-
-		#cameraFeed = QPushButton("Cameras"); 
+		#Tabbed Camerafeeds ----------------------
 		cameraFeed1 = QLabel(); 
 		cameraFeed2 = QLabel(); 
 
@@ -83,18 +145,21 @@ class SimulationWindow(QWidget):
 
 		self.tab2.layout = QVBoxLayout(self)
 		self.tab2.layout.addWidget(cameraFeed2); 
-		self.tab2.setLayout(self.tab2.layout)
+		self.tab2.setLayout(self.tab1.layout)
 
-		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
+
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
 
 
+		#Human push -------------------------
 
 		humanPush = QPushButton("HumanPush"); 
 		humanPush.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding);
 		humanPush.setStyleSheet("border:3px solid green")
 		self.layout.addWidget(humanPush,10,16,4,14) 
+		# Specifically what are these goign to looks like?
 
+		#Robot pull --------------------
 
 		robotPull = QPushButton("RobotPull"); 
 		robotPull.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
@@ -107,28 +172,26 @@ class SimulationWindow(QWidget):
 		# sliders.setStyleSheet("border:3px solid pink")
 		
 
-
+		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
 		self.beliefOpacitySlider = QSlider(Qt.Horizontal); 
 		self.beliefOpacitySlider.setSliderPosition(30)
 		self.beliefOpacitySlider.setTickPosition(QSlider.TicksBelow)
 		self.beliefOpacitySlider.setTickInterval(10); 
-		self.beliefOpacitySlider.valueChanged.connect(self.belief_opacity_client)
 
 		sliderLayout.addWidget(self.beliefOpacitySlider,0,0); 
-		#self.layout.addWidget(self.beliefOpacitySlider,16,0,1,1); 
 		belLabel = QLabel("Belief Opacity"); 
 		belLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(belLabel,0,1,1,2); 
 
+
+		#Sketch slider -------------------------------
 		self.sketchOpacitySlider = QSlider(Qt.Horizontal); 
 		self.sketchOpacitySlider.setSliderPosition(70); 
 		self.sketchOpacitySlider.setTickPosition(QSlider.TicksBelow); 
 		self.sketchOpacitySlider.setTickInterval(10); 
-		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
 
 		sliderLayout.addWidget(self.sketchOpacitySlider,1,0); 
-		#self.layout.addWidget(self.sketchOpacitySlider,17,0,1,1); 
 		sketchOLabel = QLabel("Sketch Opacity"); 
 		sketchOLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
@@ -156,7 +219,28 @@ class SimulationWindow(QWidget):
 	def camera_switch_client(self):
 		 print self.cameraTabs.currentIndex()
 
-	def closeEvent(self,event):
+	def mux_client(self):
+		try:
+			mux = rospy.ServiceProxy('/mux/select', MuxSelect)               
+			req = MuxSelectRequest(topic='/camera/camera'+ self.cameraTabs.currentIndex())
+			resp = mux(req)
+			return resp
+				
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+
+	def make_connections(self):
+		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
+
+		self.beliefOpacitySlider.valueChanged.connect(self.belief_opacity_client)
+
+		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
+
+		self.minimapView.mousePressEvent = lambda event:imageMousePress(event,self); 
+		self.minimapView.mouseMoveEvent = lambda event:imageMouseMove(event,self); 
+		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
+
+	'''def closeEvent(self,event):
 		dialog = QMessageBox(); 
 		if(not self.game):
 			dialog.setText('You have not finished the experiment yet'); 
@@ -172,8 +256,9 @@ class SimulationWindow(QWidget):
 			#print(dialog.clickedButton().text())
 
 			if(dialog.clickedButton().text() == "Yes"):
-				event.ignore(); 
+				event.ignore(); '''
 	
+
 def main():
 		app = QApplication(sys.argv)
 		coretools_app = SimulationWindow()
@@ -184,3 +269,5 @@ def main():
 
 if __name__ == '__main__':
 		main()
+
+
