@@ -8,7 +8,6 @@ import sys,os
 
 import sys
 import yaml
-<<<<<<< HEAD
 import rospy
 import struct
 import array
@@ -16,6 +15,7 @@ import time
 import os
 from std_msgs.msg import String
 from airsim_bridge.srv import *
+import signal
 # from observation_interface.msg import *
 
 # For viewing the image topic
@@ -77,10 +77,6 @@ class droneThread(QThread):
 
 			self.dronePixMap.emit(self.image)
 			
-=======
-import signal
-import rospy
->>>>>>> a24868ff94637d82a4b8b1720d4f0c77822e573d
 
 def signal_handler(signal, frame):
 		print 'You pressed Ctrl+C!'
@@ -112,7 +108,7 @@ class SimulationWindow(QWidget):
 
 	@pyqtSlot(QImage)
 	def setDroneImage(self, image):
-		self.cameraFeed.setPixmap(QPixmap(image))
+		self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
 
@@ -126,20 +122,18 @@ class SimulationWindow(QWidget):
 
 
 
-		#cameraFeed = QPushButton("Cameras"); 
-<<<<<<< HEAD
-		self.cameraFeed = QLabel(); 
-		self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
-		self.cameraFeed.setScaledContents(True); 
-		self.cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed.setStyleSheet("border:3px solid blue")
-		self.layout.addWidget(self.cameraFeed,1,16,8,14)
+		# #cameraFeed = QPushButton("Cameras"); 
+		# self.cameraFeed = QLabel(); 
+		# self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
+		# self.cameraFeed.setScaledContents(True); 
+		# self.cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		# self.cameraFeed.setStyleSheet("border:3px solid blue")
+		# self.layout.addWidget(self.cameraFeed,1,16,8,14)
 
-		th = droneThread()
-		th.dronePixMap.connect(self.setDroneImage)
-		th.start()
-=======
-		cameraFeed1 = QLabel(); 
+		# th = droneThread()
+		# th.dronePixMap.connect(self.setDroneImage)
+		# th.start()
+		self.cameraFeed1 = QLabel(); 
 		cameraFeed2 = QLabel(); 
 
 		self.cameraTabs = QTabWidget();
@@ -148,10 +142,14 @@ class SimulationWindow(QWidget):
 		self.tab3 = QWidget()
 		self.tab4 = QWidget()
 		self.tab5 = QWidget()
-		cameraFeed1.setScaledContents(True); 
-		cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed1.setScaledContents(True); 
+		self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 		#self.cameraTabs.setStyleSheet("border:3px solid blue")
-		cameraFeed1.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed1.setPixmap(QPixmap("droneView.png"))
+
+		th = droneThread()
+		th.dronePixMap.connect(self.setDroneImage)
+		th.start()
 
 		cameraFeed2.setScaledContents(True); 
 		cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
@@ -164,7 +162,7 @@ class SimulationWindow(QWidget):
 		self.cameraTabs.addTab(self.tab5,"Drone")
 
 		self.tab1.layout = QVBoxLayout(self)
-		self.tab1.layout.addWidget(cameraFeed1); 
+		self.tab1.layout.addWidget(self.cameraFeed1); 
 		self.tab1.setLayout(self.tab1.layout)
 
 		self.tab2.layout = QVBoxLayout(self)
@@ -174,7 +172,6 @@ class SimulationWindow(QWidget):
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
 
->>>>>>> a24868ff94637d82a4b8b1720d4f0c77822e573d
 
 
 		humanPush = QPushButton("HumanPush"); 
