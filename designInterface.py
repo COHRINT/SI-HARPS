@@ -6,6 +6,7 @@ from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
 import sys,os
 
+<<<<<<< HEAD
 from topic_tools.srv import *
 from planeFunctions import *
 from interfaceFunctions import *
@@ -13,8 +14,74 @@ from interfaceFunctions import *
 import numpy as np
 import time
 import yaml
-import signal
 import rospy
+import struct
+import array
+
+from std_msgs.msg import String
+from airsim_bridge.srv import *
+import signal
+# from observation_interface.msg import *
+
+# For viewing the image topic
+import cv2
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+
+import numpy as np
+
+
+
+class droneThread(QThread):
+	dronePixMap = pyqtSignal(QImage)
+
+	def __init__(self, parent=None):
+		QThread.__init__(self, parent)
+
+		self.drone_name = 'Drone 1'
+		self.name = "Drone Video"
+		self.service_name = '/get_camera_view'
+		self.size = (500,350)
+		self.img = 'placeholder.png'
+		self.format = QImage.Format_RGB888
+
+		rospy.init_node('camera_view_client')
+
+	def run(self):
+		self.running = True
+
+		rospy.wait_for_service(self.service_name)
+		camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
+
+		while self.running:
+
+			print("Running loop")
+
+			self.new_image = camera_image(0, 'lit')
+
+			msg = self.new_image.image
+			image_data = msg.data
+			image_height = msg.height
+			image_width = msg.width
+			bytes_per_line = msg.step
+
+			# convert image from little endian BGR to big endian RGB
+			length = int(len(image_data)/2)
+			# # unpack data into array
+			unpacked_data = array.array('H',image_data)
+			# # swap bytes (to swap B and R)
+			unpacked_data.byteswap() # causes strange vertical line artifacts
+			unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+			# # repack with opposite endian format
+			# unpacked_data.reverse()
+			image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+
+			self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
+
+			self.image = self.image.mirrored(True,True)
+
+			self.dronePixMap.emit(self.image)
+			
 
 def signal_handler(signal, frame):
 	print 'You pressed Ctrl+C!'
@@ -92,6 +159,10 @@ class SimulationWindow(QWidget):
 		self.sketchDensity = 3; #radius in pixels of drawn sketch points
 		#self.show();
 
+	@pyqtSlot(QImage)
+	def setDroneImage(self, image):
+		self.cameraFeed1.setPixmap(QPixmap(image))
+
 	def populateInterface(self):
 
 		#Minimap ---------------------------
@@ -113,9 +184,20 @@ class SimulationWindow(QWidget):
 		self.minimapView.setScene(self.minimapScene); 
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
-
 		#Tabbed Camerafeeds ----------------------
-		cameraFeed1 = QLabel(); 
+
+		# #cameraFeed = QPushButton("Cameras"); 
+		# self.cameraFeed = QLabel(); 
+		# self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
+		# self.cameraFeed.setScaledContents(True); 
+		# self.cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		# self.cameraFeed.setStyleSheet("border:3px solid blue")
+		# self.layout.addWidget(self.cameraFeed,1,16,8,14)
+
+		# th = droneThread()
+		# th.dronePixMap.connect(self.setDroneImage)
+		# th.start()
+		self.cameraFeed1 = QLabel(); 
 		cameraFeed2 = QLabel(); 
 
 		self.cameraTabs = QTabWidget();
@@ -124,10 +206,14 @@ class SimulationWindow(QWidget):
 		self.tab3 = QWidget()
 		self.tab4 = QWidget()
 		self.tab5 = QWidget()
-		cameraFeed1.setScaledContents(True); 
-		cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed1.setScaledContents(True); 
+		self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 		#self.cameraTabs.setStyleSheet("border:3px solid blue")
-		cameraFeed1.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed1.setPixmap(QPixmap("droneView.png"))
+
+		th = droneThread()
+		th.dronePixMap.connect(self.setDroneImage)
+		th.start()
 
 		cameraFeed2.setScaledContents(True); 
 		cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
@@ -140,7 +226,7 @@ class SimulationWindow(QWidget):
 		self.cameraTabs.addTab(self.tab5,"Drone")
 
 		self.tab1.layout = QVBoxLayout(self)
-		self.tab1.layout.addWidget(cameraFeed1); 
+		self.tab1.layout.addWidget(self.cameraFeed1); 
 		self.tab1.setLayout(self.tab1.layout)
 
 		self.tab2.layout = QVBoxLayout(self)
