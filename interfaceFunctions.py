@@ -249,7 +249,6 @@ def imageMouseRelease(QMouseEvent,wind):
 		updateModels(wind,tmp,cost,speed);
 
 def updateModels(wind,name):
-	print name
 	pairedPoints = np.array(wind.allSketches[name]); 
 	cHull = ConvexHull(pairedPoints); 
 	xFudge = len(name)*10/2; 
@@ -270,7 +269,6 @@ def updateModels(wind,name):
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',25)); 
-	painter.drawText(QPointF(centx,centy),name); 
 	pen = QPen(QColor(0,0,0,255)); 
 	pen.setWidth(wind.sketchDensity*2);
 	painter.setPen(pen); 
@@ -281,10 +279,10 @@ def updateModels(wind,name):
 	painter.end(); 
 	wind.allSketchPlanes[name].setPixmap(pm); 
 
-	wind.assumedModel.makeSketch(vertices,name);
+	'''#wind.assumedModel.makeSketch(vertices,name);
 
 
-	'''#Update Cost Map
+	#Update Cost Map
 	poly = Polygon(vertices); 
 	poly = poly.convex_hull; 
 	mina = min([v[0] for v in vertices]);

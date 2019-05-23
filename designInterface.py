@@ -6,7 +6,6 @@ from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
 import sys,os
 
-<<<<<<< HEAD
 from topic_tools.srv import *
 from planeFunctions import *
 from interfaceFunctions import *
@@ -17,19 +16,17 @@ import yaml
 import rospy
 import struct
 import array
+import cv2
 
 from std_msgs.msg import String
-from airsim_bridge.srv import *
+#from airsim_bridge.srv import *
 import signal
 # from observation_interface.msg import *
 
 # For viewing the image topic
-import cv2
+
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-
-import numpy as np
-
 
 
 class droneThread(QThread):
@@ -97,16 +94,16 @@ def imageMousePress(QMouseEvent,wind):
 	tmp = [QMouseEvent.x(),QMouseEvent.y()]; 
  
 	if(wind.sketchListen):
-		wind.sketchingInProgress = True; 
-		name = 'tru'; 
+		name = 'name'
 		if(name not in wind.allSketchPlanes.keys()):
 			wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
-		
-			wind.allSketchNames.append(name); 
+
+			wind.allSketchNames.append(name);
 		else:
 			planeFlushPaint(wind.allSketchPlanes[name],[]);
 
 def imageMouseMove(QMouseEvent,wind):
+	wind.sketchingInProgress = True; 
 	if(wind.sketchingInProgress):
 		tmp = [int(QMouseEvent.x()),int(QMouseEvent.y())]; 
 		wind.allSketchPaths[-1].append(tmp); 
@@ -117,17 +114,21 @@ def imageMouseMove(QMouseEvent,wind):
 			for j in range(-si,si+1):
 				points.append([tmp[0]+i,tmp[1]+j]); 
 
-		name = 'tru'
+		name = 'name'
 		planeAddPaint(wind.allSketchPlanes[name],points); 
 
 def imageMouseRelease(QMouseEvent,wind):
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
-		name = "tru"
-	#updateModels(wind, tru)
+		name = 'name'
+		wind.allSketches[name] = wind.allSketchPaths[-1]; 
+		updateModels(wind, name)
+		wind.sketchingInProgress = False;
+		wind.sketch.emit()
 
 class SimulationWindow(QWidget):
 	opacity_slide = pyqtSignal()
+	sketch = pyqtSignal()
 
 	def __init__(self):
 
@@ -164,7 +165,6 @@ class SimulationWindow(QWidget):
 		self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
-
 		#Minimap ---------------------------
 		self.minimapView = QGraphicsView(self); 
 		self.minimapScene = QGraphicsScene(self); 
@@ -185,14 +185,6 @@ class SimulationWindow(QWidget):
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 		#Tabbed Camerafeeds ----------------------
-
-		# #cameraFeed = QPushButton("Cameras"); 
-		# self.cameraFeed = QLabel(); 
-		# self.cameraFeed.setPixmap(QPixmap("droneView.png")); 
-		# self.cameraFeed.setScaledContents(True); 
-		# self.cameraFeed.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		# self.cameraFeed.setStyleSheet("border:3px solid blue")
-		# self.layout.addWidget(self.cameraFeed,1,16,8,14)
 
 		# th = droneThread()
 		# th.dronePixMap.connect(self.setDroneImage)
@@ -314,7 +306,8 @@ class SimulationWindow(QWidget):
 				
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
-
+	def sketch_client(self):
+		print 'naise'
 	def make_connections(self):
 		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
 
@@ -325,6 +318,8 @@ class SimulationWindow(QWidget):
 		self.minimapView.mousePressEvent = lambda event:imageMousePress(event,self); 
 		self.minimapView.mouseMoveEvent = lambda event:imageMouseMove(event,self); 
 		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
+
+		self.sketch.connect(self.sketch_client)
 
 	'''def closeEvent(self,event):
 		dialog = QMessageBox(); 
