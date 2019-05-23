@@ -250,11 +250,16 @@ def imageMouseRelease(QMouseEvent,wind):
 
 def updateModels(wind,name):
 	pairedPoints = np.array(wind.allSketches[name]); 
-	cHull = ConvexHull(pairedPoints); 
+
+	try:
+		cHull = ConvexHull(pairedPoints);
+	except:
+		wind.sketchingInProgress = False
+		return
+ 
 	xFudge = len(name)*10/2; 
-
+	
 	vertices = fitSimplePolyToHull(cHull,pairedPoints,N=4); 
-
 
 	centx = np.mean([vertices[i][0] for i in range(0,len(vertices))])-xFudge; 
 	centy = np.mean([vertices[i][1] for i in range(0,len(vertices))]) 

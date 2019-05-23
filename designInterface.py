@@ -200,7 +200,6 @@ class SimulationWindow(QWidget):
 		self.tab5 = QWidget()
 		self.cameraFeed1.setScaledContents(True); 
 		self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		#self.cameraTabs.setStyleSheet("border:3px solid blue")
 		self.cameraFeed1.setPixmap(QPixmap("droneView.png"))
 
 		th = droneThread()
@@ -307,7 +306,9 @@ class SimulationWindow(QWidget):
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 	def sketch_client(self):
-		print 'naise'
+		toast = QInputDialog()
+		toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
+
 	def make_connections(self):
 		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
 
@@ -349,6 +350,9 @@ def main():
 		sys.exit(app.exec_())
 
 if __name__ == '__main__':
+	try:
 		main()
+	except rospy.ROSInterruptException:
+		pass
 
 
