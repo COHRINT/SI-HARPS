@@ -196,58 +196,6 @@ def movementViewChanges(wind):
 
 
 
-def startSketch(wind):
-	wind.sketchListen=True;
-	wind.allSketchPaths.append([]); 
-
-def imageMousePress(QMouseEvent,wind):
-	if(wind.droneClickListen):
-		wind.droneClickListen = False; 
-		tmp = [QMouseEvent.scenePos().x(),QMouseEvent.scenePos().y()]; 
-		wind.timeLeft = wind.DRONE_WAIT_TIME;
-		revealMapDrone(wind,tmp);
-		updateDroneTimer(wind);   
-	elif(wind.sketchListen):
-		wind.sketchingInProgress = True; 
-		name = wind.sketchName.text(); 
-		if(name not in wind.allSketchPlanes.keys()):
-			wind.allSketchPlanes[name] = wind.imageScene.addPixmap(makeTransparentPlane(wind));
-			wind.objectsDrop.addItem(name);
-			wind.allSketchNames.append(name); 
-		else:
-			planeFlushPaint(wind.allSketchPlanes[name],[]);
-
-def imageMouseMove(QMouseEvent,wind):
-	if(wind.sketchingInProgress):
-		tmp = [int(QMouseEvent.scenePos().x()),int(QMouseEvent.scenePos().y())]; 
-		wind.allSketchPaths[-1].append(tmp); 
-		#add points to be sketched
-		points = []; 
-		si = wind.sketchDensity;
-		for i in range(-si,si+1):
-			for j in range(-si,si+1):
-				points.append([tmp[0]+i,tmp[1]+j]); 
-
-		name = wind.sketchName.text(); 
-		planeAddPaint(wind.allSketchPlanes[name],points); 
-
-def imageMouseRelease(QMouseEvent,wind):
-
-	if(wind.sketchingInProgress):
-		tmp = wind.sketchName.text(); 
-		wind.sketchName.clear();
-		wind.sketchName.setPlaceholderText("Sketch Name");
-
-		cost = wind.costRadioGroup.checkedId(); 
-		speed = wind.speedRadioGroup.checkedId(); 
-		wind.safeRadio.setChecked(True); 
-		wind.nomRadio.setChecked(True); 
-
-		wind.allSketches[tmp] = wind.allSketchPaths[-1]; 
-		wind.sketchListen = False; 
-		wind.sketchingInProgress = False; 
-		updateModels(wind,tmp,cost,speed);
-
 def updateModels(wind,name):
 	pairedPoints = np.array(wind.allSketches[name]); 
 
@@ -273,7 +221,8 @@ def updateModels(wind,name):
 	pen = QPen(QColor(255,0,0,255)); 
 	pen.setWidth(10); 
 	painter.setPen(pen); 
-	painter.setFont(QtGui.QFont('Decorative',25)); 
+	painter.setFont(QtGui.QFont('Decorative',15)); 
+	painter.drawText(QPointF(centx,centy),name); 
 	pen = QPen(QColor(0,0,0,255)); 
 	pen.setWidth(wind.sketchDensity*2);
 	painter.setPen(pen); 
