@@ -84,7 +84,7 @@ def signal_handler(signal, frame):
 	print 'You pressed Ctrl+C!'
 	sys.exit(0)
 		
-signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGINT, signal_handler)
 
 
 def imageMousePress(QMouseEvent,wind):
@@ -94,13 +94,9 @@ def imageMousePress(QMouseEvent,wind):
 	tmp = [QMouseEvent.x(),QMouseEvent.y()]; 
  
 	if(wind.sketchListen):
-		name = 'name'
-		if(name not in wind.allSketchPlanes.keys()):
-			wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
+		name = ''
+		wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
 
-			wind.allSketchNames.append(name);
-		else:
-			planeFlushPaint(wind.allSketchPlanes[name],[]);
 
 def imageMouseMove(QMouseEvent,wind):
 	wind.sketchingInProgress = True; 
@@ -108,23 +104,24 @@ def imageMouseMove(QMouseEvent,wind):
 		tmp = [int(QMouseEvent.x()),int(QMouseEvent.y())]; 
 		wind.allSketchPaths[-1].append(tmp); 
 		#add points to be sketched
-		points = []; 
+		wind.points = []; 
 		si = wind.sketchDensity;
 		for i in range(-si,si+1):
 			for j in range(-si,si+1):
-				points.append([tmp[0]+i,tmp[1]+j]); 
+				wind.points.append([tmp[0]+i,tmp[1]+j]); 
 
-		name = 'name'
-		planeAddPaint(wind.allSketchPlanes[name],points); 
+		name = ''
+		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
 
 def imageMouseRelease(QMouseEvent,wind):
+	name = ''
+	wind.allSketches[name] = wind.allSketchPaths[-1]; 
+	updateModels(wind, name)
+
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
-		name = 'name'
-		wind.allSketches[name] = wind.allSketchPaths[-1]; 
-		updateModels(wind, name)
-		wind.sketchingInProgress = False;
 		wind.sketch.emit()
+		wind.sketchingInProgress = False;
 
 class SimulationWindow(QWidget):
 	opacity_slide = pyqtSignal()
@@ -158,6 +155,8 @@ class SimulationWindow(QWidget):
 		self.allSketchPlanes = {}; 
 		self.sketchLabels = {}; 
 		self.sketchDensity = 3; #radius in pixels of drawn sketch points
+		self.sketchName = '';
+		self.points = []
 		#self.show();
 
 	@pyqtSlot(QImage)
@@ -290,8 +289,11 @@ class SimulationWindow(QWidget):
 		 print self.beliefOpacitySlider.value()
 		 #painter.setOpacity(self.beliefOpacity)
 	def sketch_opacity_client(self):
-		 painter = QPainter()
-		 print self.sketchOpacitySlider.value()
+		#painter = QPainter(self);
+		#painter.setOpacity(0.5);
+		#painter.drawPixmap(0, 0, self.allSketchPlanes['me'].pixmap);
+		
+		print self.sketchPlane.effectiveOpacity()
 		 #painter.setOpacity(self.beliefOpacity)
 	def camera_switch_client(self):
 		 print self.cameraTabs.currentIndex()
@@ -305,9 +307,25 @@ class SimulationWindow(QWidget):
 				
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
+
 	def sketch_client(self):
 		toast = QInputDialog()
-		toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
+		self.sketchName, okPressed = toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
+		print self.sketchName
+
+
+		if okPressed and self.sketchName:
+			self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
+			if(self.sketchName not in self.allSketchPlanes.keys()):
+				self.allSketchPlanes[self.sketchName] = self.allSketchPlanes.pop('')
+				self.allSketchNames.append(self.sketchName);
+			else:
+				planeFlushPaint(self.allSketchPlanes[''],[]);
+				self.allSketchPlanes.pop('')
+				self.allSketches.pop('')
+				self.allSketchPaths[-2] = []
+			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
+			updateModels(self,self.sketchName)
 
 	def make_connections(self):
 		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
