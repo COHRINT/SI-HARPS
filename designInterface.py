@@ -316,10 +316,10 @@ class SimulationWindow(QWidget):
 	def sketch_client(self):
 		toast = QInputDialog()
 		self.sketchName, okPressed = toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
-		print self.sketchName
+		print (self.sketchName)
 
 
-		if okPressed and self.sketchName:
+		if okPressed and len(self.sketchName) != 0:
 			self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
 			if(self.sketchName not in self.allSketchPlanes.keys()):
 				self.allSketchPlanes[self.sketchName] = self.allSketchPlanes.pop('')
@@ -330,13 +330,11 @@ class SimulationWindow(QWidget):
 				self.allSketches.pop('')
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
 			updateModels(self,self.sketchName)
-
-		if not okPressed: 
+		else:
 			planeFlushPaint(self.allSketchPlanes[''],[]);
 			self.allSketchPlanes.pop('')
 			self.allSketches.pop('')
 			self.sketchLabels.pop('')
-			#self.allSketchPaths[-2] = []
 
 	def make_connections(self):
 
