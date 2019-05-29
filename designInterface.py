@@ -17,6 +17,7 @@ import rospy
 import struct
 import array
 import cv2
+from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
 #from airsim_bridge.srv import *
@@ -41,44 +42,69 @@ class droneThread(QThread):
 		self.size = (500,350)
 		self.img = 'placeholder.png'
 		self.format = QImage.Format_RGB888
+		self.bridge = CvBridge()
 
 		rospy.init_node('camera_view_client')
 
 	def run(self):
 		self.running = True
 
-		rospy.wait_for_service(self.service_name)
-		camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
+		# rospy.wait_for_service(self.service_name)
+		# camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
 
-		while self.running:
+		# while self.running:
 
-			print("Running loop")
+		print("Running loop")
 
-			self.new_image = camera_image(0, 'lit')
+		self.new_image = rospy.Subscriber("/airsim/image_raw", Image, self.EmitSetDroneImage)
 
-			msg = self.new_image.image
-			image_data = msg.data
-			image_height = msg.height
-			image_width = msg.width
-			bytes_per_line = msg.step
+			# msg = self.new_image.image
+			# image_data = msg.data
+			# image_height = msg.height
+			# image_width = msg.width
+			# bytes_per_line = msg.step
 
-			# convert image from little endian BGR to big endian RGB
-			length = int(len(image_data)/2)
-			# # unpack data into array
-			unpacked_data = array.array('H',image_data)
-			# # swap bytes (to swap B and R)
-			unpacked_data.byteswap() # causes strange vertical line artifacts
-			unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
-			# # repack with opposite endian format
-			# unpacked_data.reverse()
-			image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+			# # convert image from little endian BGR to big endian RGB
+			# length = int(len(image_data)/2)
+			# # # unpack data into array
+			# unpacked_data = array.array('H',image_data)
+			# # # swap bytes (to swap B and R)
+			# unpacked_data.byteswap() # causes strange vertical line artifacts
+			# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+			# # # repack with opposite endian format
+			# # unpacked_data.reverse()
+			# image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
 
-			self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
+			# self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
 
-			self.image = self.image.mirrored(True,True)
+			# self.image = self.image.mirrored(True,True)
 
-			self.dronePixMap.emit(self.image)
-			
+			# self.dronePixMap.emit(self.image)
+	
+	def EmitSetDroneImage(self, msg):
+		image_data = msg.data
+		image_height = msg.height
+		image_width = msg.width
+		bytes_per_line = msg.step
+
+		cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
+
+		# convert image from little endian BGR to big endian RGB
+		length = int(len(image_data)/2)
+		# # unpack data into array
+		unpacked_data = array.array('H',image_data)
+		# # swap bytes (to swap B and R)
+		# unpacked_data.by/teswap() # causes strange vertical line artifacts
+		# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+		# # repack with opposite endian format
+		# unpacked_data.reverse()
+		image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+
+		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGBA8888)
+
+		# self.image = self.image.mirrored(True,True)
+
+		self.dronePixMap.emit(self.image)	
 
 def signal_handler(signal, frame):
 	print 'You pressed Ctrl+C!'
@@ -173,6 +199,7 @@ class SimulationWindow(QWidget):
 
 	@pyqtSlot(QImage)
 	def setDroneImage(self, image):
+		# print("Set Image")
 		self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
