@@ -91,7 +91,7 @@ def imageMousePress(QMouseEvent,wind):
 	wind.sketchListen=True;
 	wind.allSketchPaths.append([]); 
 
-	tmp = [QMouseEvent.x(),QMouseEvent.y()]; 
+	tmp = [QMouseEvent.localPos().x(),QMouseEvent.localPos().y()]; 
  
 	if(wind.sketchListen):
 		name = ''
@@ -101,7 +101,7 @@ def imageMousePress(QMouseEvent,wind):
 def imageMouseMove(QMouseEvent,wind):
 	wind.sketchingInProgress = True; 
 	if(wind.sketchingInProgress):
-		tmp = [int(QMouseEvent.x()),int(QMouseEvent.y())]; 
+		tmp = [int(QMouseEvent.localPos().x()),int(QMouseEvent.localPos().y())]; 
 		wind.allSketchPaths[-1].append(tmp); 
 		#add points to be sketched
 		wind.points = []; 
@@ -122,6 +122,18 @@ def imageMouseRelease(QMouseEvent,wind):
 		print 'A new sketch, hazzah!'
 		wind.sketch.emit()
 		wind.sketchingInProgress = False;
+
+'''def imageMouseScroll(QwheelEvent,wind):
+	if(QwheelEvent.angleDelta().y() > 0):
+		wind.minimapView.scale(1.25, 1.25)
+	else:
+		wind.minimapView.scale(0.8, 0.8)
+'''
+def redrawSketches(wind):
+	#print("Redrawing"); 
+	if wind.sketchLabels:
+		for name in wind.sketchLabels.keys():
+			updateModels(wind,name); 
 
 class SimulationWindow(QWidget):
 	opacity_slide = pyqtSignal()
@@ -171,15 +183,18 @@ class SimulationWindow(QWidget):
 		#make sketchPlane
 		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
-
-#		self.minimap = QGraphicsScene(); 
-		pix = QPixmap('overhead.png'); 
+		self.pix = QPixmap('overhead.png'); 
+		self.belief = QPixmap('GaussianMixtureExample.png')
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.fitInView(self.sketchPlane); 
 
 		#map plane
-		self.mapPlane = self.minimapScene.addPixmap(pix);
+		self.mapPlane = self.minimapScene.addPixmap(self.pix);
+
+		#belief Layer
+		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
+
 		self.minimapView.setScene(self.minimapScene); 
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
@@ -254,6 +269,7 @@ class SimulationWindow(QWidget):
 		self.beliefOpacitySlider.setSliderPosition(30)
 		self.beliefOpacitySlider.setTickPosition(QSlider.TicksBelow)
 		self.beliefOpacitySlider.setTickInterval(10); 
+		makeBeliefMap(self)
 
 		sliderLayout.addWidget(self.beliefOpacitySlider,0,0); 
 		belLabel = QLabel("Belief Opacity"); 
@@ -284,17 +300,6 @@ class SimulationWindow(QWidget):
 			dialog.setText('The Video would now pause'); 
 			dialog.exec_(); 
 
-	def belief_opacity_client(self):
-		 painter = QPainter()
-		 print self.beliefOpacitySlider.value()
-		 #painter.setOpacity(self.beliefOpacity)
-	def sketch_opacity_client(self):
-		#painter = QPainter(self);
-		#painter.setOpacity(0.5);
-		#painter.drawPixmap(0, 0, self.allSketchPlanes['me'].pixmap);
-		
-		print self.sketchPlane.effectiveOpacity()
-		 #painter.setOpacity(self.beliefOpacity)
 	def camera_switch_client(self):
 		 print self.cameraTabs.currentIndex()
 
@@ -323,22 +328,29 @@ class SimulationWindow(QWidget):
 				planeFlushPaint(self.allSketchPlanes[''],[]);
 				self.allSketchPlanes.pop('')
 				self.allSketches.pop('')
-				self.allSketchPaths[-2] = []
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
 			updateModels(self,self.sketchName)
 
-	def make_connections(self):
-		self.sketchOpacitySlider.valueChanged.connect(self.sketch_opacity_client)
+		if not okPressed: 
+			planeFlushPaint(self.allSketchPlanes[''],[]);
+			self.allSketchPlanes.pop('')
+			self.allSketches.pop('')
+			self.sketchLabels.pop('')
+			#self.allSketchPaths[-2] = []
 
-		self.beliefOpacitySlider.valueChanged.connect(self.belief_opacity_client)
+	def make_connections(self):
 
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 
 		self.minimapView.mousePressEvent = lambda event:imageMousePress(event,self); 
 		self.minimapView.mouseMoveEvent = lambda event:imageMouseMove(event,self); 
 		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
+		#self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
 
 		self.sketch.connect(self.sketch_client)
+
+		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 
+		self.sketchOpacitySlider.valueChanged.connect(lambda: redrawSketches(self)); 
 
 	'''def closeEvent(self,event):
 		dialog = QMessageBox(); 

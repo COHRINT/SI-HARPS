@@ -218,12 +218,12 @@ def updateModels(wind,name):
 
 	pm = wind.allSketchPlanes[name].pixmap(); 
 	painter = QPainter(pm); 
-	pen = QPen(QColor(255,0,0,255)); 
+	pen = QPen(QColor(255,0,0,255*wind.sketchOpacitySlider.sliderPosition()/100)); 
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',15)); 
 	painter.drawText(QPointF(centx,centy),name); 
-	pen = QPen(QColor(0,0,0,255)); 
+	pen = QPen(QColor(0,0,0,255*wind.sketchOpacitySlider.sliderPosition()/100));
 	pen.setWidth(wind.sketchDensity*2);
 	painter.setPen(pen); 
 	 
@@ -448,3 +448,28 @@ def pushButtonPressed(wind):
 	wind.lastPush = [pos,rel,name]; 
 
 
+def makeBeliefMap(wind):
+	
+	wind.trueImage = wind.pix
+	wind.imgWidth = wind.trueImage.size().width(); 
+	wind.imgHeight = wind.trueImage.size().height(); 
+ 
+
+	sp = SubplotParams(left=0.,bottom=0.,right=1.,top=1.); 
+	fig = Figure(subplotpars=sp); 
+	canvas = FigureCanvas(fig); 
+	ax = fig.add_subplot(111); 
+
+	ax.invert_yaxis(); 
+	ax.set_axis_off(); 
+
+	canvas.draw(); 
+
+
+	size = canvas.size(); 
+	width,height = size.width(),size.height(); 
+	im = wind.belief 
+	pm = im
+	#pm = pm.scaled(wind.imgWidth,wind.imgHeight);
+	scale = float(wind.beliefOpacitySlider.sliderPosition())/100
+	paintPixToPix(wind.beliefLayer,pm,scale);   
