@@ -13,7 +13,7 @@ from interfaceFunctions import *
 import numpy as np
 import time
 import yaml
-import rospy
+#import rospy
 import struct
 import array
 import cv2
@@ -44,7 +44,7 @@ class droneThread(QThread):
 		self.format = QImage.Format_RGB888
 		self.bridge = CvBridge()
 
-		rospy.init_node('camera_view_client')
+		#rospy.init_node('camera_view_client')
 
 	def run(self):
 		self.running = True
@@ -56,7 +56,7 @@ class droneThread(QThread):
 
 		print("Running loop")
 
-		self.new_image = rospy.Subscriber("/airsim/image_raw", Image, self.EmitSetDroneImage)
+		#self.new_image = rospy.Subscriber("/airsim/image_raw", Image, self.EmitSetDroneImage)
 
 			# msg = self.new_image.image
 			# image_data = msg.data
@@ -433,9 +433,10 @@ def main():
 
 
 if __name__ == '__main__':
+	main()
+	'''
 	try:
 		main()
 	except rospy.ROSInterruptException:
-		pass
-
+		pass'''
 
