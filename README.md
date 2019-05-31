@@ -1,2 +1,2 @@
 # SI-HARPS
-Sketching Interface facilitated Human Augmented Robotic Perception and Sensing
+Sketching Interface facilitated Human Augmented Robotic Planning and Sensing
