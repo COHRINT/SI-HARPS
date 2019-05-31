@@ -112,7 +112,7 @@ def signal_handler(signal, frame):
 		
 	signal.signal(signal.SIGINT, signal_handler)
 
-
+#Mouse commands are overloaded to make temporary sketch that is confirmed or destroyed later 
 def imageMousePress(QMouseEvent,wind):
 	wind.sketchListen=True;
 	wind.allSketchPaths.append([]); 
@@ -146,15 +146,17 @@ def imageMouseRelease(QMouseEvent,wind):
 
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
-		wind.sketch.emit()
+		wind.sketch.emit() #emit pyqtSignal to get to self.sketch_client()
 		wind.sketchingInProgress = False;
 
+#Code for mose basic scrolling implentation
 '''def imageMouseScroll(QwheelEvent,wind):
 	if(QwheelEvent.angleDelta().y() > 0):
 		wind.minimapView.scale(1.25, 1.25)
 	else:
 		wind.minimapView.scale(0.8, 0.8)
 '''
+
 def redrawSketches(wind):
 	#print("Redrawing"); 
 	if wind.sketchLabels:
@@ -162,7 +164,6 @@ def redrawSketches(wind):
 			updateModels(wind,name); 
 
 class SimulationWindow(QWidget):
-	opacity_slide = pyqtSignal()
 	sketch = pyqtSignal()
 
 	def __init__(self):
@@ -203,11 +204,12 @@ class SimulationWindow(QWidget):
 		self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
+
 		#Minimap ---------------------------
 		self.minimapView = QGraphicsView(self); 
 		self.minimapScene = QGraphicsScene(self); 
 
-		#make sketchPlane
+		#make sketchPlane --------------------
 		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
 		self.pix = QPixmap('overhead.png'); 
@@ -216,10 +218,10 @@ class SimulationWindow(QWidget):
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.fitInView(self.sketchPlane); 
 
-		#map plane
+		#map plane ------------------
 		self.mapPlane = self.minimapScene.addPixmap(self.pix);
 
-		#belief Layer
+		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
 
 		self.minimapView.setScene(self.minimapScene); 
@@ -275,14 +277,14 @@ class SimulationWindow(QWidget):
 		humanPush.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding);
 		humanPush.setStyleSheet("border:3px solid green")
 		self.layout.addWidget(humanPush,10,16,4,14) 
-		# Specifically what are these goign to looks like?
+		# Specifically what are these going to look like?
 
 		#Robot pull --------------------
 
 		robotPull = QPushButton("RobotPull"); 
 		robotPull.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
 		robotPull.setStyleSheet("border:3px solid green")
-		self.layout.addWidget(robotPull,15,16,2,14) 
+		self.layout.addWidget(robotPull,14,16,2,14) 
 
 
 		# sliders = QPushButton("Slider Controls"); 
@@ -315,11 +317,20 @@ class SimulationWindow(QWidget):
 		sketchOLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
 
-
-
+		#NPC information -------------------------
+		self.npcBox = QLineEdit(self)
+		self.npcBox.setReadOnly(True)
+		self.layout.addWidget(self.npcBox,15,16,2,14)
+		#Get all values from yaml file
+		with open("npc.yaml", 'r') as fp:
+			self.out = yaml.load(fp)
+		f = self.npcBox.font()
+		f.setPointSize(18) # sets the size to 18
+		self.npcBox.setFont(f)
+		self.generateInput()
 		self.layout.addLayout(sliderLayout,15,1,2,14) 
 
-	def keyPressEvent(self,event):
+	def keyPressEvent(self,event): #Future implementation space bar pause
 		#print("ENTER KEY")
 		if(event.key() == QtCore.Qt.Key_Space):
 			#print("ENTER KEY")
@@ -328,56 +339,72 @@ class SimulationWindow(QWidget):
 			dialog.exec_(); 
 
 	def camera_switch_client(self):
+		#Camera index might be handy
 		 print self.cameraTabs.currentIndex()
 
-	def mux_client(self):
+	def generateInput(self):
+		#Randomizes input for every clause from the yaml
+   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['MOD1']) + ' ' + np.random.choice(self.out['Subject']) + ' ' + np.random.choice(self.out['Location']))
+
+
+	def mux_client(self):   ##This will (probably) be handy for switching feeds, look into multiplex switcher
 		try:
 			mux = rospy.ServiceProxy('/mux/select', MuxSelect)               
-			req = MuxSelectRequest(topic='/camera/camera'+ self.cameraTabs.currentIndex())
+			req = MuxSelectRequest(topic='/camera/camera'+ self.cameraTabs.currentIndex()) #request a new topic
 			resp = mux(req)
 			return resp
 				
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 
-	def sketch_client(self):
+	def sketch_client(self):  #For the pop up when a sketch occurs
 		toast = QInputDialog()
 		self.sketchName, okPressed = toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
 		print (self.sketchName)
 
-
+		#If they press OK and named their sketch
 		if okPressed and len(self.sketchName) != 0:
 			self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
+			#If the sketch name is new
 			if(self.sketchName not in self.allSketchPlanes.keys()):
+				#Remove temporary and replace with new name
 				self.allSketchPlanes[self.sketchName] = self.allSketchPlanes.pop('')
 				self.allSketchNames.append(self.sketchName);
 			else:
+				#If the name is not new just remove the temporary stuff
 				planeFlushPaint(self.allSketchPlanes[''],[]);
 				self.allSketchPlanes.pop('')
 				self.allSketches.pop('')
+			#Redraw regardless
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
 			updateModels(self,self.sketchName)
+		#If they hit cancel or didnt name their sketch
 		else:
 			planeFlushPaint(self.allSketchPlanes[''],[]);
 			self.allSketchPlanes.pop('')
 			self.allSketches.pop('')
 			self.sketchLabels.pop('')
 
-	def make_connections(self):
-
+	def make_connections(self): 
+		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 
+		#Overloads for sketching 
 		self.minimapView.mousePressEvent = lambda event:imageMousePress(event,self); 
 		self.minimapView.mouseMoveEvent = lambda event:imageMouseMove(event,self); 
 		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
+
+		#If you want zoom
 		#self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
 
+		#Handler for final sketches
 		self.sketch.connect(self.sketch_client)
 
+		#Handlers for sliders
 		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 
 		self.sketchOpacitySlider.valueChanged.connect(lambda: redrawSketches(self)); 
 
-	'''def closeEvent(self,event):
+	'''def closeEvent(self,event): #Luke's code to never leave the experiment
 		dialog = QMessageBox(); 
 		if(not self.game):
 			dialog.setText('You have not finished the experiment yet'); 
@@ -403,6 +430,7 @@ def main():
 		app.startTimer(200)
 
 		sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
 	try:
