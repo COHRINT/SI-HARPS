@@ -19,8 +19,8 @@ import array
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
-from std_msgs.msg import String
-#from airsim_bridge.srv import *
+from std_msgs.msg import String, Int16
+#from airsim_bridge.srv import
 import signal
 # from observation_interface.msg import *
 
@@ -30,83 +30,83 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 
-class droneThread(QThread):
-	dronePixMap = pyqtSignal(QImage)
+# class droneThread(QThread):
+# 	dronePixMap = pyqtSignal(QImage)
 
-	def __init__(self, parent=None):
-		QThread.__init__(self, parent)
+# 	def __init__(self, parent=None):
+# 		QThread.__init__(self, parent)
 
-		self.drone_name = 'Drone 1'
-		self.name = "Drone Video"
-		self.service_name = '/get_camera_view'
-		self.size = (500,350)
-		self.img = 'placeholder.png'
-		self.format = QImage.Format_RGB888
-		self.bridge = CvBridge()
+# 		self.drone_name = 'Drone 1'
+# 		self.name = "Drone Video"
+# 		self.service_name = '/get_camera_view'
+# 		self.size = (500,350)
+# 		self.img = 'placeholder.png'
+# 		self.format = QImage.Format_RGB888
+# 		self.bridge = CvBridge()
 
-		# rospy.init_node('camera_view_client')
+# 		# rospy.init_node('camera_view_client')
 
-	def run(self):
-		self.running = True
+# 	def run(self):
+# 		self.running = True
 
-		# rospy.wait_for_service(self.service_name)
-		# camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
+# 		# rospy.wait_for_service(self.service_name)
+# 		# camera_image = rospy.ServiceProxy(self.service_name, GetCameraImage)
 
-		# while self.running:
+# 		# while self.running:
 
-		print("Running loop")
+# 		print("Running loop")
 	
-		# camTab = SimulationWindow.cameraTabs.currentIndex()
+# 		# camTab = SimulationWindow.cameraTabs.currentIndex()
 
-		# self.new_image = rospy.Subscriber("/airsim1/image_raw", Image, self.EmitSetDroneImage)
+# 		# self.new_image = rospy.Subscriber("/airsim1/image_raw", Image, self.EmitSetDroneImage)
 
-			# msg = self.new_image.image
-			# image_data = msg.data
-			# image_height = msg.height
-			# image_width = msg.width
-			# bytes_per_line = msg.step
+# 			# msg = self.new_image.image
+# 			# image_data = msg.data
+# 			# image_height = msg.height
+# 			# image_width = msg.width
+# 			# bytes_per_line = msg.step
 
-			# # convert image from little endian BGR to big endian RGB
-			# length = int(len(image_data)/2)
-			# # # unpack data into array
-			# unpacked_data = array.array('H',image_data)
-			# # # swap bytes (to swap B and R)
-			# unpacked_data.byteswap() # causes strange vertical line artifacts
-			# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
-			# # # repack with opposite endian format
-			# # unpacked_data.reverse()
-			# image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+# 			# # convert image from little endian BGR to big endian RGB
+# 			# length = int(len(image_data)/2)
+# 			# # # unpack data into array
+# 			# unpacked_data = array.array('H',image_data)
+# 			# # # swap bytes (to swap B and R)
+# 			# unpacked_data.byteswap() # causes strange vertical line artifacts
+# 			# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+# 			# # # repack with opposite endian format
+# 			# # unpacked_data.reverse()
+# 			# image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
 
-			# self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
+# 			# self.image = QImage(image_data,image_width,image_height,bytes_per_line,self.format)
 
-			# self.image = self.image.mirrored(True,True)
+# 			# self.image = self.image.mirrored(True,True)
 
-			# self.dronePixMap.emit(self.image)
+# 			# self.dronePixMap.emit(self.image)
 	
-	def EmitSetDroneImage(self, msg):
-		image_data = msg.data
-		image_height = msg.height
-		image_width = msg.width
-		bytes_per_line = msg.step
+# 	def EmitSetDroneImage(self, msg):
+# 		image_data = msg.data
+# 		image_height = msg.height
+# 		image_width = msg.width
+# 		bytes_per_line = msg.step
 
-		cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
+# 		cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
 
-		# convert image from little endian BGR to big endian RGB
-		length = int(len(image_data)/2)
-		# # unpack data into array
-		unpacked_data = array.array('H',image_data)
-		# # swap bytes (to swap B and R)
-		# unpacked_data.by/teswap() # causes strange vertical line artifacts
-		# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
-		# # repack with opposite endian format
-		# unpacked_data.reverse()
-		image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
+# 		# convert image from little endian BGR to big endian RGB
+# 		length = int(len(image_data)/2)
+# 		# # unpack data into array
+# 		unpacked_data = array.array('H',image_data)
+# 		# # swap bytes (to swap B and R)
+# 		# unpacked_data.by/teswap() # causes strange vertical line artifacts
+# 		# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+# 		# # repack with opposite endian format
+# 		# unpacked_data.reverse()
+# 		image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
 
-		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGBA8888)
+# 		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGBA8888)
 
-		# self.image = self.image.mirrored(True,True)
+# 		# self.image = self.image.mirrored(True,True)
 
-		self.dronePixMap.emit(self.image)	
+# 		self.dronePixMap.emit(self.image)	
 
 def signal_handler(signal, frame):
 	print 'You pressed Ctrl+C!'
@@ -204,8 +204,9 @@ class SimulationWindow(QWidget):
 
 		rospy.init_node('camera_view_client1')
 		self.bridge = CvBridge()
-
-		self.new_image = rospy.Subscriber("/airsim1/image_raw", Image, self.EmitSetDroneImage)
+		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
+		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
+		self.cam_num.publish(0)
 
 	@pyqtSlot(QImage)
 	def setDroneImage(self, image):
@@ -246,6 +247,9 @@ class SimulationWindow(QWidget):
 		self.cameraFeed1 = QLabel(); 
 
 		self.cameraFeed2 = QLabel(); 
+		self.cameraFeed3 = QLabel();
+		self.cameraFeed4 = QLabel();
+		self.cameraFeed5 = QLabel();
 
 		self.cameraTabs = QTabWidget();
 		self.tab1 = QWidget()
@@ -261,20 +265,20 @@ class SimulationWindow(QWidget):
 		self.cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 		self.cameraFeed2.setPixmap(QPixmap("droneView.png"))
 		
-		# self.cameraFeed3.setScaledContents(True); 
-		# self.cameraFeed3.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		# self.cameraFeed3.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed3.setScaledContents(True); 
+		self.cameraFeed3.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed3.setPixmap(QPixmap("droneView.png"))
 		
-		# self.cameraFeed4.setScaledContents(True); 
-		# self.cameraFeed4.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		# self.cameraFeed4.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed4.setScaledContents(True); 
+		self.cameraFeed4.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed4.setPixmap(QPixmap("droneView.png"))
 		
-		# self.cameraFeed5.setScaledContents(True); 
-		# self.cameraFeed5.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		# self.cameraFeed5.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed5.setScaledContents(True); 
+		self.cameraFeed5.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed5.setPixmap(QPixmap("droneView.png"))
 
-		th = droneThread()
-		th.dronePixMap.connect(self.setDroneImage)
+		# th = droneThread()
+		# th.dronePixMap.connect(self.setDroneImage)
 		# th.start(self)
 
 		# cameraFeed2.setScaledContents(True); 
@@ -291,21 +295,21 @@ class SimulationWindow(QWidget):
 		self.tab1.layout.addWidget(self.cameraFeed1); 
 		self.tab1.setLayout(self.tab1.layout)
 
-		# self.tab3.layout = QVBoxLayout(self)
-		# self.tab3.layout.addWidget(self.cameraFeed3); 
-		# self.tab3.setLayout(self.tab1.layout)
+		self.tab3.layout = QVBoxLayout(self)
+		self.tab3.layout.addWidget(self.cameraFeed3); 
+		self.tab3.setLayout(self.tab3.layout)
 
 		self.tab2.layout = QVBoxLayout(self)
 		self.tab2.layout.addWidget(self.cameraFeed2); 
 		self.tab2.setLayout(self.tab2.layout)
 
-		# self.tab4.layout = QVBoxLayout(self)
-		# self.tab4.layout.addWidget(self.cameraFeed4); 
-		# self.tab4.setLayout(self.tab1.layout)
+		self.tab4.layout = QVBoxLayout(self)
+		self.tab4.layout.addWidget(self.cameraFeed4); 
+		self.tab4.setLayout(self.tab4.layout)
 
-		# self.tab5.layout = QVBoxLayout(self)
-		# self.tab5.layout.addWidget(self.cameraFeed5); 
-		# self.tab5.setLayout(self.tab1.layout)
+		self.tab5.layout = QVBoxLayout(self)
+		self.tab5.layout.addWidget(self.cameraFeed5); 
+		self.tab5.setLayout(self.tab5.layout)
 
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
 		self.setLayout(self.layout)
@@ -382,15 +386,25 @@ class SimulationWindow(QWidget):
 		#Camera index might be handy
 		self.currentCamTab = self.cameraTabs.currentIndex()
 		print(self.currentCamTab)
+		self.cam_num.publish(self.currentCamTab)
+		self.new_image.unregister()
 
-		if self.currentCamTab is 0:
-			print("Show camera 1")
-			self.new_image.unregister()
-			self.new_image = rospy.Subscriber("/airsim1/image_raw", Image, self.EmitSetDroneImage)
-		elif self.currentCamTab is 1:
-			print("Show camera 2s")
-			self.new_image.unregister()
-			self.new_image = rospy.Subscriber("/airsim2/image_raw", Image, self.EmitSetDroneImage)
+		# if self.currentCamTab is 4:
+		# 	# print("Hello")
+		# 	# self.new_image.unregister()
+		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.EmitSetDroneImage)
+		# else:
+		# 	# self.new_image.unregister()
+		# 	self.new_image = rospy.Subscriber("/Camera%d/image_raw" % (self.currentCamTab +1), Image, self.EmitSetDroneImage)
+
+		# if self.currentCamTab is 0:
+		# 	print("Show camera 1")
+		# 	self.new_image.unregister()
+		# 	self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
+		# elif self.currentCamTab is 1:
+		# 	print("Show camera 2s")
+		# 	self.new_image.unregister()
+		# 	self.new_image = rospy.Subscriber("/Camera2/image_raw", Image, self.EmitSetDroneImage)
 
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
@@ -501,6 +515,12 @@ class SimulationWindow(QWidget):
 			self.cameraFeed1.setPixmap(QPixmap(self.image))	
 		elif self.currentCamTab is 1:
 			self.cameraFeed2.setPixmap(QPixmap(self.image))
+		elif self.currentCamTab is 2:
+			self.cameraFeed3.setPixmap(QPixmap(self.image))
+		elif self.currentCamTab is 3:
+			self.cameraFeed4.setPixmap(QPixmap(self.image))
+		elif self.currentCamTab is 4:
+			self.cameraFeed5.setPixmap(QPixmap(self.image))
 	
 
 def main():
