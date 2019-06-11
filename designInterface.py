@@ -121,6 +121,7 @@ def imageMousePress(QMouseEvent,wind):
 
 	tmp = [QMouseEvent.localPos().x(),QMouseEvent.localPos().y()]; 
  
+ 	#print(tmp); 
 	if(wind.sketchListen):
 		name = ''
 		wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
@@ -129,7 +130,8 @@ def imageMousePress(QMouseEvent,wind):
 def imageMouseMove(QMouseEvent,wind):
 	wind.sketchingInProgress = True; 
 	if(wind.sketchingInProgress):
-		tmp = [int(QMouseEvent.localPos().x()),int(QMouseEvent.localPos().y())]; 
+		tmp = [int(QMouseEvent.localPos().x()),int(QMouseEvent.localPos().y())];
+		#print(tmp);  
 		wind.allSketchPaths[-1].append(tmp); 
 		#add points to be sketched
 		wind.points = []; 
@@ -208,6 +210,18 @@ class SimulationWindow(QWidget):
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.cam_num.publish(0)
 
+
+
+	def resizeEvent(self,event):
+		print("WindowResized"); 
+		#self.minimapView.fitInView(QRectF(self.pix.rect())); 
+		#resize all planes
+		#print(self.minimapView.size()); 
+		#self.mapPlane.pixmap().scaled(self.minimapView.size()); 
+		# if(hasattr(self,'ready')):
+		# 	for key in self.allSketchPlanes.keys():
+		# 		allSketchPlanes[key].pixmap().scaled(self.minimapView.size()); 
+
 	@pyqtSlot(QImage)
 	def setDroneImage(self, image):
 		print("Set Image")
@@ -232,6 +246,7 @@ class SimulationWindow(QWidget):
 
 		#map plane ------------------
 		self.mapPlane = self.minimapScene.addPixmap(self.pix);
+		self.minimapView.fitInView(QRectF(self.pix.rect())); 
 
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
