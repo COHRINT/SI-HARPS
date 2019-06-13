@@ -22,12 +22,15 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String, Int16
 #from airsim_bridge.srv import
 import signal
+from interface.msg import *
 # from observation_interface.msg import *
 
 # For viewing the image topic
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+
+vertNum = 4 
 
 
 # class droneThread(QThread):
@@ -144,9 +147,12 @@ def imageMouseMove(QMouseEvent,wind):
 		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
 
 def imageMouseRelease(QMouseEvent,wind):
+	print("mouse release")
 	name = ''
+	global vertNum
+	# print(wind.allSketchPaths[-1])
 	wind.allSketches[name] = wind.allSketchPaths[-1]; 
-	updateModels(wind, name)
+	updateModels(wind, name, vertNum, False)
 
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
@@ -162,10 +168,12 @@ def imageMouseRelease(QMouseEvent,wind):
 '''
 
 def redrawSketches(wind):
+	print("redraw")
+	global vertNum
 	#print("Redrawing"); 
 	if wind.sketchLabels:
 		for name in wind.sketchLabels.keys():
-			updateModels(wind,name); 
+			updateModels(wind,name, vertNum,True); 
 
 class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
@@ -202,6 +210,7 @@ class SimulationWindow(QWidget):
 		self.sketchName = '';
 		self.points = []
 		self.currentCamTab = 0
+		self.vertNum = 4
 		#self.show();
 
 		rospy.init_node('camera_view_client1')
@@ -209,6 +218,9 @@ class SimulationWindow(QWidget):
 		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.cam_num.publish(0)
+
+		# rate = rospy.Rate(10) # 10hz
+		# self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 
 
 
@@ -437,6 +449,7 @@ class SimulationWindow(QWidget):
 			print "Service call failed: %s"%e
 
 	def sketch_client(self):  #For the pop up when a sketch occurs
+		print("Sketch Client")
 		toast = QInputDialog()
 		self.sketchName, okPressed = toast.getText(self, "Sketch","Landmark name:", QLineEdit.Normal, "")
 		print (self.sketchName)
@@ -456,7 +469,7 @@ class SimulationWindow(QWidget):
 				self.allSketches.pop('')
 			#Redraw regardless
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
-			updateModels(self,self.sketchName)
+			updateModels(self,self.sketchName, self.vertNum,True)
 		#If they hit cancel or didnt name their sketch
 		else:
 			planeFlushPaint(self.allSketchPlanes[''],[]);

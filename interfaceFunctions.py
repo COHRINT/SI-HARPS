@@ -28,6 +28,8 @@ import sys
 import numpy as np
 from scipy.spatial import ConvexHull
 import time
+import rospy
+from interface.msg import *
 
 from planeFunctions import *;
 
@@ -196,8 +198,14 @@ def movementViewChanges(wind):
 
 
 
-def updateModels(wind,name):
+def updateModels(wind,name, vertNum, pub):
 	pairedPoints = np.array(wind.allSketches[name]); 
+
+	rate = rospy.Rate(10)
+
+	
+	sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+	msg = sketch()
 
 	try:
 		cHull = ConvexHull(pairedPoints);
@@ -207,7 +215,26 @@ def updateModels(wind,name):
  
 	xFudge = len(name)*10/2; 
 	
-	vertices = fitSimplePolyToHull(cHull,pairedPoints,N=4); 
+	points = []
+	vertices = fitSimplePolyToHull(cHull,pairedPoints, vertNum);
+
+	if pub:
+		print(len(vertices))
+
+		for i in range(0, len(vertices)):
+			print(i)
+			msg.points[i].x = vertices[i][0]
+			msg.points[i].y = vertices[i][1]
+			msg.points[i].z = 0
+
+
+		msg.name = name
+		print("Publishing")
+		rospy.loginfo(msg)
+		sketchPub.publish(msg)
+		rate.sleep()
+
+	print(vertices)
 
 	centx = np.mean([vertices[i][0] for i in range(0,len(vertices))])-xFudge; 
 	centy = np.mean([vertices[i][1] for i in range(0,len(vertices))]) 
@@ -263,7 +290,7 @@ def updateModels(wind,name):
 
 '''
 
-def fitSimplePolyToHull(cHull,pairedPoints,N = 4):
+def fitSimplePolyToHull(cHull,pairedPoints, N):
 	vertices = [];  
 
 	for i in range(0,len(cHull.vertices)):
