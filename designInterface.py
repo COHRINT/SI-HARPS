@@ -175,6 +175,21 @@ def redrawSketches(wind):
 		for name in wind.sketchLabels.keys():
 			updateModels(wind,name, vertNum,True); 
 
+
+def pushButtonPressed(wind):
+	print("Publish Push Message!!!"); 
+
+
+def pullYesPressed(wind):
+	print("Publish Yes Message!!"); 
+
+def pullNoPressed(wind):
+	print("Publish No Message!!"); 
+
+def pullIDKPressed(wind):
+	print("Publish IDK Message!!"); 
+
+
 class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
@@ -344,24 +359,100 @@ class SimulationWindow(QWidget):
 
 		#Human push -------------------------
 
-		humanPush = QPushButton("HumanPush"); 
-		humanPush.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding);
-		humanPush.setStyleSheet("border:3px solid green")
-		self.layout.addWidget(humanPush,10,16,4,14) 
+		# humanPush = QPushButton("HumanPush"); 
+		# humanPush.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding);
+		# humanPush.setStyleSheet("border:3px solid green")
+		# self.layout.addWidget(humanPush,10,16,4,14) 
+		
+
+		sectionHeadingFont = QFont(); 
+		sectionHeadingFont.setPointSize(20); 
+		sectionHeadingFont.setBold(True); 
+
+		self.pushLayout = QGridLayout(); 
 		# Specifically what are these going to look like?
+		#pushLabel = QLabel("Human Push"); 
+		#pushLabel.setFont(sectionHeadingFont);
+		#self.pushLayout = QGridLayout(); 
+		#pushLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter); 
+		#pushFrame = QFrame(); 
+		#pushFrame.setStyleSheet('border: 1px solid black')
+		#self.pushLayout.addWidget(pushFrame,1,0,2,3); 
+		#self.pushLayout.addWidget(pushLabel,0,0,1,2); 
+
+		self.pushLabel = QLabel("The Target ");
+		self.pushLabel.setFont(sectionHeadingFont); 
+		self.pushLayout.addWidget(self.pushLabel,1,0); 
+
+		self.positivityDrop = QComboBox(); 
+		self.positivityDrop.addItem("Is"); 
+		self.positivityDrop.addItem("Is not"); 
+		self.pushLayout.addWidget(self.positivityDrop,1,1); 
+
+		self.relationsDrop = QComboBox();
+		self.relationsDrop.addItem("Near"); 
+		self.relationsDrop.addItem("North of"); 
+		self.relationsDrop.addItem("South of");
+		self.relationsDrop.addItem("East of");
+		self.relationsDrop.addItem("West of");
+		self.pushLayout.addWidget(self.relationsDrop,1,2); 
+
+		self.objectsDrop = QComboBox();
+		self.objectsDrop.addItem("You"); 
+		self.pushLayout.addWidget(self.objectsDrop,1,3); 
+
+		self.pushButton = QPushButton("Submit"); 
+		self.pushButton.setStyleSheet("background-color: green"); 
+		self.pushLayout.addWidget(self.pushButton,2,0);
+
+		self.layout.addLayout(self.pushLayout,8,16,4,14); 
+
+
+
 
 		#Robot pull --------------------
 
-		robotPull = QPushButton("RobotPull"); 
-		robotPull.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
-		robotPull.setStyleSheet("border:3px solid green")
-		self.layout.addWidget(robotPull,14,16,2,14) 
+		# robotPull = QPushButton("RobotPull"); 
+		# robotPull.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
+		# robotPull.setStyleSheet("border:3px solid green")
+		# self.layout.addWidget(robotPull,14,16,2,14) 
 
 
 		# sliders = QPushButton("Slider Controls"); 
 		# sliders.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
 		# sliders.setStyleSheet("border:3px solid pink")
 		
+
+		# pullLabel = QLabel("Robot Pull"); 
+		# pullLabel.setFont(sectionHeadingFont);
+		pullLayout = QGridLayout(); 
+		# pullLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter); 
+		# pullLayout.addWidget(pullLabel,0,0,1,2); 
+
+		#self.layout.addWidget(pullLabel,12,1); 
+
+		self.pullQuestion = QLineEdit("Awaiting Query");
+		self.pullQuestion.setReadOnly(True); 
+		self.pullQuestion.setAlignment(QtCore.Qt.AlignCenter); 
+		f = self.pullQuestion.font(); 
+		f.setPointSize(12); 
+		self.pullQuestion.setFont(f); 
+		pullLayout.addWidget(self.pullQuestion,1,0,1,3); 
+
+		self.yesButton = QPushButton("Yes");  
+		self.yesButton.setStyleSheet("background-color: green"); 
+		pullLayout.addWidget(self.yesButton,2,0); 
+
+		self.IDKButton = QPushButton("IDK"); 
+		self.IDKButton.setStyleSheet("background-color: gray"); 
+		pullLayout.addWidget(self.IDKButton,2,1); 
+
+		self.noButton = QPushButton("No");  
+		self.noButton.setStyleSheet("background-color: red"); 
+		pullLayout.addWidget(self.noButton,2,2); 
+
+		self.layout.addLayout(pullLayout,12,16,2,14)
+
 
 		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
@@ -495,6 +586,14 @@ class SimulationWindow(QWidget):
 		#Handlers for sliders
 		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 
 		self.sketchOpacitySlider.valueChanged.connect(lambda: redrawSketches(self)); 
+
+		self.pushButton.clicked.connect(lambda: pushButtonPressed(self)); 
+
+		self.noButton.clicked.connect(lambda: pullNoPressed(self)); 
+
+		self.IDKButton.clicked.connect(lambda: pullIDKPressed(self)); 
+
+		self.yesButton.clicked.connect(lambda: pullYesPressed(self)); 
 
 	'''def closeEvent(self,event): #Luke's code to never leave the experiment
 		dialog = QMessageBox(); 
