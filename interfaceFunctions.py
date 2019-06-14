@@ -204,7 +204,7 @@ def updateModels(wind,name, vertNum, pub):
 	rate = rospy.Rate(10)
 
 	
-	sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+	# sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 	msg = sketch()
 
 	try:
@@ -231,7 +231,7 @@ def updateModels(wind,name, vertNum, pub):
 		msg.name = name
 		print("Publishing")
 		rospy.loginfo(msg)
-		sketchPub.publish(msg)
+		wind.sketchPub.publish(msg)
 		rate.sleep()
 
 	print(vertices)

@@ -57,6 +57,8 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    sketch.msg
+   push.msg
+   pull.msg
  )
 
 ## Generate services in the 'srv' folder

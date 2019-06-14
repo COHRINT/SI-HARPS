@@ -177,17 +177,32 @@ def redrawSketches(wind):
 
 
 def pushButtonPressed(wind):
-	print("Publish Push Message!!!"); 
+	print("Publish Push Message!!!");
+	msg = push()
+	msg.parts[0] = wind.positivityDrop.currentText()
+	msg.parts[1] = wind.relationsDrop.currentText()
+	msg.parts[2] = wind.objectsDrop.currentText()
+
+	wind.pushPub.publish(msg)
 
 
 def pullYesPressed(wind):
 	print("Publish Yes Message!!"); 
+	wind.pullAnswerPub.publish(1)
+	wind.pullQuestion.setStyleSheet("background-color: slategray")
+	wind.pullQuestion.setText("Awaiting Query")
 
 def pullNoPressed(wind):
-	print("Publish No Message!!"); 
+	print("Publish No Message!!");
+	wind.pullAnswerPub.publish(0) 
+	wind.pullQuestion.setStyleSheet("background-color: slategray")
+	wind.pullQuestion.setText("Awaiting Query")
 
 def pullIDKPressed(wind):
-	print("Publish IDK Message!!"); 
+	print("Publish IDK Message!!");
+	wind.pullAnswerPub.publish(-1) 
+	wind.pullQuestion.setStyleSheet("background-color: slategray")
+	wind.pullQuestion.setText("Awaiting Query")
 
 
 class SimulationWindow(QWidget):
@@ -228,10 +243,15 @@ class SimulationWindow(QWidget):
 		self.vertNum = 4
 		#self.show();
 
-		rospy.init_node('camera_view_client1')
-		self.bridge = CvBridge()
 		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
+		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
+		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
+		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
+
+		rospy.init_node('camera_view_client1')
+		self.bridge = CvBridge()
 		self.cam_num.publish(0)
 
 		# rate = rospy.Rate(10) # 10hz
@@ -499,6 +519,12 @@ class SimulationWindow(QWidget):
 			dialog = QMessageBox(); 
 			dialog.setText('The Video would now pause'); 
 			dialog.exec_(); 
+
+	def changePullQuestion(self, msg):
+		self.pullQuestion.setStyleSheet("background-color: yellow")
+		print("Pull callback")
+		print(msg.question)
+		self.pullQuestion.setText(msg.question)
 
 	def camera_switch_client(self):
 		#Camera index might be handy
