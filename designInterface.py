@@ -285,8 +285,8 @@ class SimulationWindow(QWidget):
 		#make sketchPlane --------------------
 		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
-		self.pix = QPixmap('overhead.png'); 
-		self.belief = QPixmap('GaussianMixtureExample.png')
+		self.pix = QPixmap('images/overhead.png'); 
+		self.belief = QPixmap('images/GaussianMixtureExample.png')
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.fitInView(self.sketchPlane); 
@@ -321,23 +321,23 @@ class SimulationWindow(QWidget):
 		self.tab5 = QWidget()
 		self.cameraFeed1.setScaledContents(True); 
 		self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed1.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed1.setPixmap(QPixmap("images/droneView.png"))
 
 		self.cameraFeed2.setScaledContents(True); 
 		self.cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed2.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed2.setPixmap(QPixmap("images/droneView.png"))
 		
 		self.cameraFeed3.setScaledContents(True); 
 		self.cameraFeed3.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed3.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed3.setPixmap(QPixmap("images/droneView.png"))
 		
 		self.cameraFeed4.setScaledContents(True); 
 		self.cameraFeed4.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed4.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed4.setPixmap(QPixmap("images/droneView.png"))
 		
 		self.cameraFeed5.setScaledContents(True); 
 		self.cameraFeed5.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		self.cameraFeed5.setPixmap(QPixmap("droneView.png"))
+		self.cameraFeed5.setPixmap(QPixmap("images/droneView.png"))
 
 		# th = droneThread()
 		# th.dronePixMap.connect(self.setDroneImage)
@@ -687,9 +687,8 @@ def main():
 
 if __name__ == '__main__':
 	main()
-	'''
 	try:
 		main()
 	except rospy.ROSInterruptException:
-		pass'''
+		pass
 
