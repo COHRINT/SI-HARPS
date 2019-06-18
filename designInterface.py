@@ -255,7 +255,7 @@ class SimulationWindow(QWidget):
 		self.cam_num.publish(0)
 
 		# rate = rospy.Rate(10) # 10hz
-		# self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 
 
 
@@ -285,7 +285,7 @@ class SimulationWindow(QWidget):
 		#make sketchPlane --------------------
 		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
-		self.pix = QPixmap('images/overhead.png'); 
+		self.pix = QPixmap('overhead.png'); 
 		self.belief = QPixmap('images/GaussianMixtureExample.png')
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -510,8 +510,13 @@ class SimulationWindow(QWidget):
 		f.setPointSize(18) # sets the size to 18
 		self.npcBox.setFont(f)
 		self.generateInput()
-		self.layout.addLayout(sliderLayout,15,1,2,14) 
+		
+		timer = QTimer(self)
+		timer.timeout.connect(self.generateInput)
+   		timer.start(self.out['duration'])
 
+
+		self.layout.addLayout(sliderLayout,15,1,2,14) 
 	def keyPressEvent(self,event): #Future implementation space bar pause
 		#print("ENTER KEY")
 		if(event.key() == QtCore.Qt.Key_Space):
@@ -549,11 +554,20 @@ class SimulationWindow(QWidget):
 		# 	print("Show camera 2s")
 		# 	self.new_image.unregister()
 		# 	self.new_image = rospy.Subscriber("/Camera2/image_raw", Image, self.EmitSetDroneImage)
-
+	def flash(self):
+		self.npcBox.setStyleSheet("border: 2px solid white")
+		self.npcBox.update()
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
-   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['MOD1']) + ' ' + np.random.choice(self.out['Subject']) + ' ' + np.random.choice(self.out['Location']))
+		self.npcBox.setStyleSheet("border: 4px solid red")
+   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' + np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
+   		self.npcBox.update()
 
+
+   		timer2 = QTimer(self)
+   		timer2.setSingleShot(True)
+		timer2.timeout.connect(self.flash)
+		timer2.start(self.out['flash'])
 
 	def mux_client(self):   ##This will (probably) be handy for switching feeds, look into multiplex switcher
 		try:
@@ -579,6 +593,7 @@ class SimulationWindow(QWidget):
 				#Remove temporary and replace with new name
 				self.allSketchPlanes[self.sketchName] = self.allSketchPlanes.pop('')
 				self.allSketchNames.append(self.sketchName);
+				self.objectsDrop.addItem(self.sketchName)
 			else:
 				#If the name is not new just remove the temporary stuff
 				planeFlushPaint(self.allSketchPlanes[''],[]);

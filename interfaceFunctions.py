@@ -29,7 +29,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import time
 import rospy
-#from interface.msg import *
+from interface.msg import *
 
 from planeFunctions import *;
 
@@ -203,9 +203,8 @@ def updateModels(wind,name, vertNum, pub):
 
 	rate = rospy.Rate(10)
 
-	
-	# sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
-	#msg = sketch()
+	sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+	msg = sketch()
 
 	try:
 		cHull = ConvexHull(pairedPoints);

@@ -1,20 +1,30 @@
+duration: 10000
+flash: 2000
 Names:
   - Old Man Jenkins
   - Nancy
   - Jarrold
   - Zanzibar
   - Brad
-MOD1:
+Certainty:
   - thinks that 
-  - knows that
-  - just saw
-  - caught glimpse that
+  - knows that 
+  - just saw that
 Subject:
   - a suspicious vehicle
   - a flock of chickens
   - a drug deal 
+  - a criminal
 Location:
-  - is near the watertower
-  - is at the farmhouse
-  - is at the pond
-  - is near the lake
+  - the watertower
+  - the farmhouse
+  - the pond
+  - the lake
+Proximity:
+  - is at
+  - is near
+  - in the vicinity of 
+Exclamation:
+  - !
+Addtional:
+  - Reports are coming in that

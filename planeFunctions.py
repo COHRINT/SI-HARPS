@@ -63,6 +63,7 @@ def planeAddPaint(planeWidget,points=[],col=None,pen=None):
 	pm = planeWidget.pixmap(); 
 
 	painter = QPainter(pm); 
+	
 	if(pen is None):
 		if(col is None):
 			pen = QPen(QColor(0,0,0,255)); 
