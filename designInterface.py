@@ -168,9 +168,11 @@ def imageMouseScroll(QwheelEvent,wind):
 	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*4))
 	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*4))
 	if QwheelEvent.angleDelta().y() > 0:
-		wind.pixmapArray[x][y].setScale(4)
 		zoomIn(wind,x,y)
+		wind.zoom = True
+		wind.pixmapArray[x][y].setScale(4)
 	if QwheelEvent.angleDelta().y() < 0:
+		wind.zoom = False
 		wind.minimapScene.removeItem(wind.pixmapArray[x][y])
 		cutImage(wind)
 		redrawSketches(wind)
@@ -251,6 +253,7 @@ class SimulationWindow(QWidget):
 		self.vertNum = 4
 		#self.show();
 
+		self.zoom = False
 		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
@@ -393,21 +396,19 @@ class SimulationWindow(QWidget):
 
 		self.pushLayout = QGridLayout();
 		pushBox = QGroupBox()
-		hbox1 = QHBoxLayout()
-		vbox1 = QVBoxLayout()
-		pushBox.setLayout(hbox1)
+		pushBox.setLayout(self.pushLayout)
 
 		pushBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
 
 		self.pushLabel = QLabel("The Target ");
 		self.pushLabel.setStyleSheet("background-color: white")
 		self.pushLabel.setFont(sectionHeadingFont); 
-		hbox1.addWidget(self.pushLabel); 
+		self.pushLayout.addWidget(self.pushLabel,9,16,1,3); 
 
 		self.positivityDrop = QComboBox(); 
 		self.positivityDrop.addItem("Is"); 
 		self.positivityDrop.addItem("Is not"); 
-		hbox1.addWidget(self.positivityDrop); 
+		self.pushLayout.addWidget(self.positivityDrop,9,19,1,3); 
 
 		self.relationsDrop = QComboBox();
 		self.relationsDrop.addItem("Near"); 
@@ -415,26 +416,22 @@ class SimulationWindow(QWidget):
 		self.relationsDrop.addItem("South of");
 		self.relationsDrop.addItem("East of");
 		self.relationsDrop.addItem("West of");
-		hbox1.addWidget(self.relationsDrop); 
+		self.pushLayout.addWidget(self.relationsDrop,9,22,1,3); 
 
 		self.objectsDrop = QComboBox();
 		self.objectsDrop.addItem("You"); 
-		hbox1.addWidget(self.objectsDrop); 
+		self.pushLayout.addWidget(self.objectsDrop,9,25,1,3); 
 
 		self.pushButton = QPushButton("Submit"); 
 		self.pushButton.setStyleSheet("background-color: green"); 
-		self.pushLayout.addWidget(self.pushButton,2,0);
+		self.pushLayout.addWidget(self.pushButton,10,21,1,5);
 
-		self.layout.addWidget(pushBox,9,16,1,14)
-		self.layout.addLayout(self.pushLayout,10,20,1,6); 
-
-
+		self.layout.addWidget(pushBox,9,16,2,14)
 
 		#Robot pull --------------------
 		pullLayout = QGridLayout(); 
 		pullBox = QGroupBox()
-		hbox = QHBoxLayout()
-		pullBox.setLayout(hbox)
+		pullBox.setLayout(pullLayout)
 
 		pullBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
 
@@ -444,22 +441,21 @@ class SimulationWindow(QWidget):
 		f = self.pullQuestion.font(); 
 		f.setPointSize(12); 
 		self.pullQuestion.setFont(f); 
-		pullLayout.addWidget(self.pullQuestion); 
+		pullLayout.addWidget(self.pullQuestion,12,16,1,14); 
 
 		self.yesButton = QPushButton("Yes");  
 		self.yesButton.setStyleSheet("background-color: green"); 
-		hbox.addWidget(self.yesButton); 
+		pullLayout.addWidget(self.yesButton,13,16,1,4); 
 
 		self.IDKButton = QPushButton("IDK"); 
 		self.IDKButton.setStyleSheet("background-color: gray"); 
-		hbox.addWidget(self.IDKButton); 
+		pullLayout.addWidget(self.IDKButton,13,21,1,4); 
 
 		self.noButton = QPushButton("No");  
 		self.noButton.setStyleSheet("background-color: red"); 
-		hbox.addWidget(self.noButton); 
+		pullLayout.addWidget(self.noButton,13,26,1,4); 
 
-		self.layout.addLayout(pullLayout,12,16,1,14)
-		self.layout.addWidget(pullBox,13,16,1,14)
+		self.layout.addWidget(pullBox,12,16,2,14)
 
 
 		#Belief slider --------------------------------
@@ -551,7 +547,7 @@ class SimulationWindow(QWidget):
 		# 	self.new_image.unregister()
 		# 	self.new_image = rospy.Subscriber("/Camera2/image_raw", Image, self.EmitSetDroneImage)
 	def flash(self):
-		self.npcBox.setStyleSheet("border: 2px inset white")
+		self.npcBox.setStyleSheet("border: 4px inset white")
 		self.npcBox.update()
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml

@@ -138,8 +138,9 @@ def cutImage(wind):
 			#map plane ------------------
 			
 def zoomIn(wind,x,y):
-	for i in range(0,4):
-		for j in range(0,4):
-			wind.minimapScene.removeItem(wind.pixmapArray[i][j])
-	wind.minimapScene.addItem(wind.pixmapArray[x][y])
-	wind.pixmapArray[x][y].setPos(0,0)
+	if wind.zoom == False:
+		for i in range(0,4):
+			for j in range(0,4):
+				wind.minimapScene.removeItem(wind.pixmapArray[i][j])
+		wind.minimapScene.addItem(wind.pixmapArray[x][y])
+		wind.pixmapArray[x][y].setPos(0,0)
