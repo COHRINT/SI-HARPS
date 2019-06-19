@@ -63,7 +63,7 @@ def planeAddPaint(planeWidget,points=[],col=None,pen=None):
 	pm = planeWidget.pixmap(); 
 
 	painter = QPainter(pm); 
-	
+
 	if(pen is None):
 		if(col is None):
 			pen = QPen(QColor(0,0,0,255)); 
@@ -125,3 +125,21 @@ def paintPixToPix(planeWidget,newPM,opacity):
 	painter.drawPixmap(0,0,newPM); 
 	painter.end(); 
 	planeWidget.setPixmap(pm); 
+
+def cutImage(wind):
+	wind.pixmapArray = QGraphicsPixmapItem()
+	wind.pixmapArray = [[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]]
+	for i in range(0,4):
+		for j in range(0,4):
+			wind.pics = wind.pix.copy(QRect(wind.pix.width()/4*i,wind.pix.height()/4*j,wind.pix.width()/4,wind.pix.height()/4))
+			wind.pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
+			wind.pixmapArray[i][j].setPos(wind.pix.width()/4*i,wind.pix.height()/4*j)
+			wind.minimapScene.addItem(wind.pixmapArray[i][j])
+			#map plane ------------------
+			
+def zoomIn(wind,x,y):
+	for i in range(0,4):
+		for j in range(0,4):
+			wind.minimapScene.removeItem(wind.pixmapArray[i][j])
+	wind.minimapScene.addItem(wind.pixmapArray[x][y])
+	wind.pixmapArray[x][y].setPos(0,0)

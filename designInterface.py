@@ -17,6 +17,7 @@ import rospy
 import struct
 import array
 import cv2
+import math
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String, Int16
@@ -160,17 +161,24 @@ def imageMouseRelease(QMouseEvent,wind):
 		wind.sketchingInProgress = False;
 
 #Code for mose basic scrolling implentation
-'''def imageMouseScroll(QwheelEvent,wind):
-	if(QwheelEvent.angleDelta().y() > 0):
-		wind.minimapView.scale(1.25, 1.25)
-	else:
-		wind.minimapView.scale(0.8, 0.8)
-'''
+def imageMouseScroll(QwheelEvent,wind):
+	tmp = [int(QwheelEvent.x()),int(QwheelEvent.y())];
+	print QwheelEvent.angleDelta().y()
+
+	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*4))
+	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*4))
+	if QwheelEvent.angleDelta().y() > 0:
+		wind.pixmapArray[x][y].setScale(4)
+		zoomIn(wind,x,y)
+	if QwheelEvent.angleDelta().y() < 0:
+		wind.minimapScene.removeItem(wind.pixmapArray[x][y])
+		cutImage(wind)
+		redrawSketches(wind)
 
 def redrawSketches(wind):
 	print("redraw")
 	global vertNum
-	#print("Redrawing"); 
+	#print("Redrawing
 	if wind.sketchLabels:
 		for name in wind.sketchLabels.keys():
 			updateModels(wind,name, vertNum,True); 
@@ -257,8 +265,6 @@ class SimulationWindow(QWidget):
 		# rate = rospy.Rate(10) # 10hz
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 
-
-
 	def resizeEvent(self,event):
 		print("WindowResized"); 
 		#self.minimapView.fitInView(QRectF(self.pix.rect())); 
@@ -284,21 +290,23 @@ class SimulationWindow(QWidget):
 
 		#make sketchPlane --------------------
 		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
+		self.sketchPlane = QGraphicsScene.ForegroundLayer
 
 		self.pix = QPixmap('overhead.png'); 
 		self.belief = QPixmap('images/GaussianMixtureExample.png')
+
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-		self.minimapView.fitInView(self.sketchPlane); 
+		#self.minimapView.fitInView(self.sketchPlane); 
 
-		#map plane ------------------
-		self.mapPlane = self.minimapScene.addPixmap(self.pix);
+		cutImage(self)
 		self.minimapView.fitInView(QRectF(self.pix.rect())); 
 
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
 
 		self.minimapView.setScene(self.minimapScene); 
+		self.minimapView.setStyleSheet("border: 2px inset white")
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 		#Tabbed Camerafeeds ----------------------
@@ -307,7 +315,6 @@ class SimulationWindow(QWidget):
 		# th.dronePixMap.connect(self.setDroneImage)
 		# th.start()
 		self.cameraFeed1 = QLabel(); 
-
 		self.cameraFeed2 = QLabel(); 
 		self.cameraFeed3 = QLabel();
 		self.cameraFeed4 = QLabel();
@@ -374,40 +381,33 @@ class SimulationWindow(QWidget):
 		self.tab5.setLayout(self.tab5.layout)
 
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
+		#self.cameraTabs.setStyleSheet("border: 2px inset")
 		self.setLayout(self.layout)
 
 
 		#Human push -------------------------
 
-		# humanPush = QPushButton("HumanPush"); 
-		# humanPush.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding);
-		# humanPush.setStyleSheet("border:3px solid green")
-		# self.layout.addWidget(humanPush,10,16,4,14) 
-		
-
 		sectionHeadingFont = QFont(); 
 		sectionHeadingFont.setPointSize(20); 
 		sectionHeadingFont.setBold(True); 
 
-		self.pushLayout = QGridLayout(); 
-		# Specifically what are these going to look like?
-		#pushLabel = QLabel("Human Push"); 
-		#pushLabel.setFont(sectionHeadingFont);
-		#self.pushLayout = QGridLayout(); 
-		#pushLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter); 
-		#pushFrame = QFrame(); 
-		#pushFrame.setStyleSheet('border: 1px solid black')
-		#self.pushLayout.addWidget(pushFrame,1,0,2,3); 
-		#self.pushLayout.addWidget(pushLabel,0,0,1,2); 
+		self.pushLayout = QGridLayout();
+		pushBox = QGroupBox()
+		hbox1 = QHBoxLayout()
+		vbox1 = QVBoxLayout()
+		pushBox.setLayout(hbox1)
+
+		pushBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
 
 		self.pushLabel = QLabel("The Target ");
+		self.pushLabel.setStyleSheet("background-color: white")
 		self.pushLabel.setFont(sectionHeadingFont); 
-		self.pushLayout.addWidget(self.pushLabel,1,0); 
+		hbox1.addWidget(self.pushLabel); 
 
 		self.positivityDrop = QComboBox(); 
 		self.positivityDrop.addItem("Is"); 
 		self.positivityDrop.addItem("Is not"); 
-		self.pushLayout.addWidget(self.positivityDrop,1,1); 
+		hbox1.addWidget(self.positivityDrop); 
 
 		self.relationsDrop = QComboBox();
 		self.relationsDrop.addItem("Near"); 
@@ -415,41 +415,28 @@ class SimulationWindow(QWidget):
 		self.relationsDrop.addItem("South of");
 		self.relationsDrop.addItem("East of");
 		self.relationsDrop.addItem("West of");
-		self.pushLayout.addWidget(self.relationsDrop,1,2); 
+		hbox1.addWidget(self.relationsDrop); 
 
 		self.objectsDrop = QComboBox();
 		self.objectsDrop.addItem("You"); 
-		self.pushLayout.addWidget(self.objectsDrop,1,3); 
+		hbox1.addWidget(self.objectsDrop); 
 
 		self.pushButton = QPushButton("Submit"); 
 		self.pushButton.setStyleSheet("background-color: green"); 
 		self.pushLayout.addWidget(self.pushButton,2,0);
 
-		self.layout.addLayout(self.pushLayout,8,16,4,14); 
-
+		self.layout.addWidget(pushBox,9,16,1,14)
+		self.layout.addLayout(self.pushLayout,10,20,1,6); 
 
 
 
 		#Robot pull --------------------
-
-		# robotPull = QPushButton("RobotPull"); 
-		# robotPull.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
-		# robotPull.setStyleSheet("border:3px solid green")
-		# self.layout.addWidget(robotPull,14,16,2,14) 
-
-
-		# sliders = QPushButton("Slider Controls"); 
-		# sliders.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding); 
-		# sliders.setStyleSheet("border:3px solid pink")
-		
-
-		# pullLabel = QLabel("Robot Pull"); 
-		# pullLabel.setFont(sectionHeadingFont);
 		pullLayout = QGridLayout(); 
-		# pullLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter); 
-		# pullLayout.addWidget(pullLabel,0,0,1,2); 
+		pullBox = QGroupBox()
+		hbox = QHBoxLayout()
+		pullBox.setLayout(hbox)
 
-		#self.layout.addWidget(pullLabel,12,1); 
+		pullBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
 
 		self.pullQuestion = QLineEdit("Awaiting Query");
 		self.pullQuestion.setReadOnly(True); 
@@ -457,21 +444,22 @@ class SimulationWindow(QWidget):
 		f = self.pullQuestion.font(); 
 		f.setPointSize(12); 
 		self.pullQuestion.setFont(f); 
-		pullLayout.addWidget(self.pullQuestion,1,0,1,3); 
+		pullLayout.addWidget(self.pullQuestion); 
 
 		self.yesButton = QPushButton("Yes");  
 		self.yesButton.setStyleSheet("background-color: green"); 
-		pullLayout.addWidget(self.yesButton,2,0); 
+		hbox.addWidget(self.yesButton); 
 
 		self.IDKButton = QPushButton("IDK"); 
 		self.IDKButton.setStyleSheet("background-color: gray"); 
-		pullLayout.addWidget(self.IDKButton,2,1); 
+		hbox.addWidget(self.IDKButton); 
 
 		self.noButton = QPushButton("No");  
 		self.noButton.setStyleSheet("background-color: red"); 
-		pullLayout.addWidget(self.noButton,2,2); 
+		hbox.addWidget(self.noButton); 
 
-		self.layout.addLayout(pullLayout,12,16,2,14)
+		self.layout.addLayout(pullLayout,12,16,1,14)
+		self.layout.addWidget(pullBox,13,16,1,14)
 
 
 		#Belief slider --------------------------------
@@ -500,9 +488,17 @@ class SimulationWindow(QWidget):
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
 
 		#NPC information -------------------------
+		npcGroup = QGroupBox()
+		hbox3 = QHBoxLayout()
+		npcGroup.setLayout(hbox3)
+		npcGroup.setStyleSheet("background-color: white; border: 2px inset grey;")
+
 		self.npcBox = QLineEdit(self)
 		self.npcBox.setReadOnly(True)
-		self.layout.addWidget(self.npcBox,15,16,2,14)
+		self.npcBox.setStyleSheet("QLineEdit {background-color: black;}")
+		hbox3.addWidget(self.npcBox)
+		self.layout.addWidget(npcGroup,15,16,1,14)
+
 		#Get all values from yaml file
 		with open("npc.yaml", 'r') as fp:
 			self.out = yaml.load(fp)
@@ -555,7 +551,7 @@ class SimulationWindow(QWidget):
 		# 	self.new_image.unregister()
 		# 	self.new_image = rospy.Subscriber("/Camera2/image_raw", Image, self.EmitSetDroneImage)
 	def flash(self):
-		self.npcBox.setStyleSheet("border: 2px solid white")
+		self.npcBox.setStyleSheet("border: 2px inset white")
 		self.npcBox.update()
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
@@ -619,7 +615,7 @@ class SimulationWindow(QWidget):
 		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
 
 		#If you want zoom
-		#self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
+		self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
 
 		#Handler for final sketches
 		self.sketch.connect(self.sketch_client)
