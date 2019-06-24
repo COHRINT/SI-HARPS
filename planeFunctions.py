@@ -23,6 +23,10 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *; 
 from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
+import numpy as np
+
+from shapely.geometry import Polygon,Point
+import shapely
 
 
 def makeTruePlane(wind):
@@ -126,21 +130,27 @@ def paintPixToPix(planeWidget,newPM,opacity):
 	painter.end(); 
 	planeWidget.setPixmap(pm); 
 
-def cutImage(wind):
-	wind.pixmapArray = QGraphicsPixmapItem()
-	wind.pixmapArray = [[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]]
-	for i in range(0,4):
-		for j in range(0,4):
-			wind.pics = wind.pix.copy(QRect(wind.pix.width()/4*i,wind.pix.height()/4*j,wind.pix.width()/4,wind.pix.height()/4))
-			wind.pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
-			wind.pixmapArray[i][j].setPos(wind.pix.width()/4*i,wind.pix.height()/4*j)
-			wind.minimapScene.addItem(wind.pixmapArray[i][j])
+def cutImage(wind, image):
+	pixmapArray = QGraphicsPixmapItem()
+	pixmapArray = [[ 0 for x in range(0,wind.res)] for y in range(0,wind.res)]
+	wind.tileX_len=wind.pix.width()/wind.res
+	wind.tileY_len=wind.pix.height()/wind.res
+	for i in range(0,wind.res):
+		for j in range(0,wind.res):
+			wind.pics = image.copy(QRect(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j,wind.tileX_len,wind.tileY_len))
+			pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
+			pixmapArray[i][j].setPos(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j)
+			wind.minimapScene.addItem(pixmapArray[i][j])
+			pixmapArray[i][j].setZValue(-1)
 			#map plane ------------------
-			
-def zoomIn(wind,x,y):
-	if wind.zoom == False:
-		for i in range(0,4):
-			for j in range(0,4):
-				wind.minimapScene.removeItem(wind.pixmapArray[i][j])
-		wind.minimapScene.addItem(wind.pixmapArray[x][y])
-		wind.pixmapArray[x][y].setPos(0,0)
+	return pixmapArray
+
+def reTile(wind,pixmapArray):
+	for i in range(0,wind.res):
+		for j in range(0,wind.res):
+			pixmapArray[i][j].setPos(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j)
+			wind.minimapScene.addItem(pixmapArray[i][j])
+			pixmapArray[i][j].setScale(1)
+			pixmapArray[i][j].setZValue(-1)
+			#map plane ------------------
+	return pixmapArray
