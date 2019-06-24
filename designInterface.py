@@ -272,6 +272,8 @@ class SimulationWindow(QWidget):
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
+		self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
+		self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
 		self.bridge = CvBridge()
