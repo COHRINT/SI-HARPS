@@ -31,8 +31,6 @@ from interface.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-vertNum = 4 
-
 
 # class droneThread(QThread):
 # 	dronePixMap = pyqtSignal(QImage)
@@ -150,10 +148,9 @@ def imageMouseMove(QMouseEvent,wind):
 def imageMouseRelease(QMouseEvent,wind):
 	print("mouse release")
 	name = ''
-	global vertNum
 	# print(wind.allSketchPaths[-1])
 	wind.allSketches[name] = wind.allSketchPaths[-1]; 
-	drawing = updateModels(wind, name, vertNum, False,wind.zoom)
+	drawing = updateModels(wind, name, wind.vertNum, False,wind.zoom)
 	#wind.sket = cutImage(wind,drawing)
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
@@ -172,7 +169,7 @@ def imageMouseScroll(QwheelEvent,wind):
 		zoomIn(wind,x,y)
 		wind.zoom = True
 		wind.pic[x][y].setScale(wind.res)
-
+		wind.topLayer.setZValue(-1)
 		wind.locationX = x
 		wind.locationY = y
 		for name in wind.sketchLabels.keys():
@@ -183,16 +180,17 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.minimapScene.removeItem(wind.pic[x][y])
 		reTile(wind,wind.pic)
 		redrawSketches(wind)
+		wind.topLayer.setZValue(0)
+		wind.beliefLayer.setZValue(1)
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 
 def redrawSketches(wind):
 	print("redraw")
-	global vertNum
 	#print("Redrawing
 	if wind.sketchLabels and not wind.zoom:
 		for name in wind.sketchLabels.keys():
-			updateModels(wind,name, vertNum,True,wind.zoom); 
+			updateModels(wind,name,wind.vertNum,True,wind.zoom); 
 
 def pushButtonPressed(wind):
 	print("Publish Push Message!!!");
@@ -272,8 +270,8 @@ class SimulationWindow(QWidget):
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
-		self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
-		self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
+		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
+		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
 		self.bridge = CvBridge()
@@ -307,20 +305,24 @@ class SimulationWindow(QWidget):
 
 		#make sketchPlane --------------------
 		self.sketchPlane = makeTransparentPlane(self);
-		#self.sketchPlane = QGraphicsScene.ForegroundLayer
 
-		self.pix = QPixmap('overhead.png'); 
-		self.belief = QPixmap('images/GaussianMixtureExample.png')
+		self.pix = QPixmap('less_oldFlyoverton.png'); 
+		self.belief = QPixmap('less_oldBelief.png')
+		self.old = QPixmap('overhead.png')
 
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-		#self.minimapView.fitInView(self.sketchPlane); 
+		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		self.belief = self.belief.scaled(self.pix.width(),self.pix.height())
+		self.pic = cutImage(self, self.old)
 
-		self.pic = cutImage(self, self.pix)
-		self.minimapView.fitInView(QRectF(self.pix.rect())); 
+		#self.minimapView.fitInView(QRectF(self.pix.rect())); 
 
 		#belief Layer -----------------
-		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
+		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
+		self.beliefLayer.setZValue(1) 
+		self.topLayer = self.minimapScene.addPixmap(self.pix); 
+		self.topLayer.setZValue(-1)
 
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
