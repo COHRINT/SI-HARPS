@@ -28,6 +28,7 @@ import sys
 import numpy as np
 from scipy.spatial import ConvexHull
 import time
+import math
 import rospy
 from interface.msg import *
 
@@ -198,7 +199,7 @@ def movementViewChanges(wind):
 
 
 
-def updateModels(wind,name, vertNum, pub):
+def updateModels(wind,name, vertNum, pub,zoom):
 	pairedPoints = np.array(wind.allSketches[name]); 
 
 	rate = rospy.Rate(10)
@@ -210,6 +211,7 @@ def updateModels(wind,name, vertNum, pub):
 		cHull = ConvexHull(pairedPoints);
 	except:
 		wind.sketchingInProgress = False
+		planeFlushPaint(wind.allSketchPlanes[''],[]);
 		return
  
 	xFudge = len(name)*10/2; 
@@ -217,6 +219,16 @@ def updateModels(wind,name, vertNum, pub):
 	points = []
 	vertices = fitSimplePolyToHull(cHull,pairedPoints, vertNum);
 
+
+	centx = np.mean([vertices[i][0] for i in range(0,len(vertices))])-xFudge; 
+	centy = np.mean([vertices[i][1] for i in range(0,len(vertices))]) 
+	if zoom == True:
+		wind.zoomSketchLabels[name] = [centx,centy]; 
+	else:
+		wind.sketchLabels[name] = [centx,centy]; 
+
+
+	planeFlushPaint(wind.allSketchPlanes[name]); 
 	if pub:
 		print(len(vertices))
 
@@ -233,14 +245,6 @@ def updateModels(wind,name, vertNum, pub):
 		wind.sketchPub.publish(msg)
 		rate.sleep()
 
-	print(vertices)
-
-	centx = np.mean([vertices[i][0] for i in range(0,len(vertices))])-xFudge; 
-	centy = np.mean([vertices[i][1] for i in range(0,len(vertices))]) 
-	wind.sketchLabels[name] = [centx,centy]; 
-
-
-	planeFlushPaint(wind.allSketchPlanes[name]); 
 
 	pm = wind.allSketchPlanes[name].pixmap(); 
 	painter = QPainter(pm); 
@@ -252,13 +256,13 @@ def updateModels(wind,name, vertNum, pub):
 	pen = QPen(QColor(0,0,0,255*wind.sketchOpacitySlider.sliderPosition()/100));
 	pen.setWidth(wind.sketchDensity*2);
 	painter.setPen(pen); 
-	 
 	for i in range(0,len(vertices)):
 		painter.drawLine(QLineF(vertices[i-1][0],vertices[i-1][1],vertices[i][0],vertices[i][1])); 
 
 	painter.end(); 
 	wind.allSketchPlanes[name].setPixmap(pm); 
 
+	return pm
 	'''#wind.assumedModel.makeSketch(vertices,name);
 
 
@@ -499,3 +503,18 @@ def makeBeliefMap(wind):
 	#pm = pm.scaled(wind.imgWidth,wind.imgHeight);
 	scale = float(wind.beliefOpacitySlider.sliderPosition())/100
 	paintPixToPix(wind.beliefLayer,pm,scale);   
+
+
+def zoomIn(wind,x,y):
+	if wind.zoom == False:
+		for i in range(0,wind.res):
+			for j in range(0,wind.res):
+				wind.minimapScene.removeItem(wind.pic[i][j])
+		wind.minimapScene.addItem(wind.pic[x][y])
+		wind.pic[x][y].setPos(0,0)
+	print wind.allSketchX
+
+	for name in wind.zoomSketchLabels.keys():
+		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
+			updateModels(wind,name,wind.vertNum,False,True); 
+			

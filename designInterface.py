@@ -154,8 +154,8 @@ def imageMouseRelease(QMouseEvent,wind):
 	global vertNum
 	# print(wind.allSketchPaths[-1])
 	wind.allSketches[name] = wind.allSketchPaths[-1]; 
-	updateModels(wind, name, vertNum, False)
-
+	drawing = updateModels(wind, name, vertNum, False,wind.zoom)
+	#wind.sket = cutImage(wind,drawing)
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
 		wind.sketch.emit() #emit pyqtSignal to get to self.sketch_client()
@@ -164,28 +164,36 @@ def imageMouseRelease(QMouseEvent,wind):
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
 	tmp = [int(QwheelEvent.x()),int(QwheelEvent.y())];
-	print QwheelEvent.angleDelta().y()
 
-	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*4))
-	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*4))
+	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
+	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
+
+	#print QwheelEvent.angleDelta()
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
-		wind.pixmapArray[x][y].setScale(4)
+		wind.pic[x][y].setScale(wind.res)
+
+		wind.locationX = x
+		wind.locationY = y
+		for name in wind.sketchLabels.keys():
+			planeFlushPaint(wind.allSketchPlanes[name])
+		#redrawSketches(wind)
 	if QwheelEvent.angleDelta().y() < 0:
 		wind.zoom = False
-		wind.minimapScene.removeItem(wind.pixmapArray[x][y])
-		cutImage(wind)
+		wind.minimapScene.removeItem(wind.pic[x][y])
+		reTile(wind,wind.pic)
 		redrawSketches(wind)
+		for name in wind.zoomSketchLabels.keys():
+			planeFlushPaint(wind.allSketchPlanes[name])
 
 def redrawSketches(wind):
 	print("redraw")
 	global vertNum
 	#print("Redrawing
-	if wind.sketchLabels:
+	if wind.sketchLabels and not wind.zoom:
 		for name in wind.sketchLabels.keys():
-			updateModels(wind,name, vertNum,True); 
-
+			updateModels(wind,name, vertNum,True,wind.zoom); 
 
 def pushButtonPressed(wind):
 	print("Publish Push Message!!!");
@@ -228,7 +236,7 @@ class SimulationWindow(QWidget):
 		self.setLayout(self.layout); 
 
 		self.game = False; 
-
+		self.res = 8
 		#self.setGeometry(300, 300, 250, 150)
 		self.setWindowTitle("SI-HARPS BluePrint");
 		self.setStyleSheet("background-color:slategray;")
@@ -249,17 +257,28 @@ class SimulationWindow(QWidget):
 		self.allSketchPaths = []; 
 		self.allSketchPlanes = {}; 
 		self.sketchLabels = {}; 
+		self.zoomSketchLabels = {};
 		self.sketchDensity = 3; #radius in pixels of drawn sketch points
 		self.sketchName = '';
 		self.points = []
 		self.currentCamTab = 0
 		self.vertNum = 4
+<<<<<<< HEAD
 		self.bridge = CvBridge()
 		# self.populated = False
 		#self.show();
 
 		self.zoom = False
 		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
+=======
+		self.allSketchX = {}
+		self.allSketchY = {}
+		#self.show();
+
+		self.zoom = False
+
+		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
+>>>>>>> 646fda132cb44948683f2a28395427bd895ea58e
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
@@ -298,8 +317,8 @@ class SimulationWindow(QWidget):
 		self.minimapScene = QGraphicsScene(self); 
 
 		#make sketchPlane --------------------
-		self.sketchPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
-		self.sketchPlane = QGraphicsScene.ForegroundLayer
+		self.sketchPlane = makeTransparentPlane(self);
+		#self.sketchPlane = QGraphicsScene.ForegroundLayer
 
 		self.pix = QPixmap('overhead.png'); 
 		self.belief = QPixmap('images/GaussianMixtureExample.png')
@@ -308,14 +327,14 @@ class SimulationWindow(QWidget):
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		#self.minimapView.fitInView(self.sketchPlane); 
 
-		cutImage(self)
+		self.pic = cutImage(self, self.pix)
 		self.minimapView.fitInView(QRectF(self.pix.rect())); 
 
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief); 
 
 		self.minimapView.setScene(self.minimapScene); 
-		self.minimapView.setStyleSheet("border: 2px inset white")
+		self.minimapView.setStyleSheet("border: 4px inset grey")
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 		#Tabbed Camerafeeds ----------------------
@@ -390,7 +409,7 @@ class SimulationWindow(QWidget):
 		self.tab5.setLayout(self.tab5.layout)
 
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
-		#self.cameraTabs.setStyleSheet("border: 2px inset")
+		#self.cameraTabs.setStyleSheet("border: 4px inset grey")
 		self.setLayout(self.layout)
 
 
@@ -404,9 +423,9 @@ class SimulationWindow(QWidget):
 		pushBox = QGroupBox()
 		pushBox.setLayout(self.pushLayout)
 
-		pushBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
+		pushBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey;}")
 
-		self.pushLabel = QLabel("The Target ");
+		self.pushLabel = QLabel("The Target: ");
 		self.pushLabel.setStyleSheet("background-color: white")
 		self.pushLabel.setFont(sectionHeadingFont); 
 		self.pushLayout.addWidget(self.pushLabel,9,16,1,3); 
@@ -429,7 +448,7 @@ class SimulationWindow(QWidget):
 		self.pushLayout.addWidget(self.objectsDrop,9,25,1,3); 
 
 		self.pushButton = QPushButton("Submit"); 
-		self.pushButton.setStyleSheet("background-color: green"); 
+		self.pushButton.setStyleSheet("background-color: green; color: white"); 
 		self.pushLayout.addWidget(self.pushButton,10,21,1,5);
 
 		self.layout.addWidget(pushBox,9,16,2,14)
@@ -439,7 +458,7 @@ class SimulationWindow(QWidget):
 		pullBox = QGroupBox()
 		pullBox.setLayout(pullLayout)
 
-		pullBox.setStyleSheet("QGroupBox {background-color: white; border: 2px inset grey;}")
+		pullBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey;}")
 
 		self.pullQuestion = QLineEdit("Awaiting Query");
 		self.pullQuestion.setReadOnly(True); 
@@ -450,15 +469,15 @@ class SimulationWindow(QWidget):
 		pullLayout.addWidget(self.pullQuestion,12,16,1,14); 
 
 		self.yesButton = QPushButton("Yes");  
-		self.yesButton.setStyleSheet("background-color: green"); 
+		self.yesButton.setStyleSheet("background-color: green; color: white"); 
 		pullLayout.addWidget(self.yesButton,13,16,1,4); 
 
 		self.IDKButton = QPushButton("IDK"); 
-		self.IDKButton.setStyleSheet("background-color: gray"); 
+		self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
 		pullLayout.addWidget(self.IDKButton,13,21,1,4); 
 
 		self.noButton = QPushButton("No");  
-		self.noButton.setStyleSheet("background-color: red"); 
+		self.noButton.setStyleSheet("background-color: red; color: white"); 
 		pullLayout.addWidget(self.noButton,13,26,1,4); 
 
 		self.layout.addWidget(pullBox,12,16,2,14)
@@ -493,7 +512,7 @@ class SimulationWindow(QWidget):
 		npcGroup = QGroupBox()
 		hbox3 = QHBoxLayout()
 		npcGroup.setLayout(hbox3)
-		npcGroup.setStyleSheet("background-color: white; border: 2px inset grey;")
+		npcGroup.setStyleSheet("background-color: white; border: 4px inset grey;")
 
 		self.npcBox = QLineEdit(self)
 		self.npcBox.setReadOnly(True)
@@ -505,7 +524,7 @@ class SimulationWindow(QWidget):
 		with open("npc.yaml", 'r') as fp:
 			self.out = yaml.load(fp)
 		f = self.npcBox.font()
-		f.setPointSize(18) # sets the size to 18
+		f.setPointSize(16) # sets the size to 18
 		self.npcBox.setFont(f)
 		self.generateInput()
 
@@ -561,7 +580,8 @@ class SimulationWindow(QWidget):
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
 		self.npcBox.setStyleSheet("border: 4px solid red")
-   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' + np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
+   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' \
+   			+ np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
    		self.npcBox.update()
 
 
@@ -588,13 +608,17 @@ class SimulationWindow(QWidget):
 
 		#If they press OK and named their sketch
 		if okPressed and len(self.sketchName) != 0:
-			self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
+			if self.zoom == True:
+				self.zoomSketchLabels[self.sketchName] = self.zoomSketchLabels.pop('')
+			else:
+				self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
 			#If the sketch name is new
 			if(self.sketchName not in self.allSketchPlanes.keys()):
 				#Remove temporary and replace with new name
 				self.allSketchPlanes[self.sketchName] = self.allSketchPlanes.pop('')
 				self.allSketchNames.append(self.sketchName);
 				self.objectsDrop.addItem(self.sketchName)
+				self.allSketches.pop('')
 			else:
 				#If the name is not new just remove the temporary stuff
 				planeFlushPaint(self.allSketchPlanes[''],[]);
@@ -602,14 +626,19 @@ class SimulationWindow(QWidget):
 				self.allSketches.pop('')
 			#Redraw regardless
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
-			updateModels(self,self.sketchName, self.vertNum,True)
+			updateModels(self,self.sketchName, self.vertNum,True,self.zoom)
+			if self.zoom == True:
+				self.allSketchX[self.sketchName] = self.locationX
+				self.allSketchY[self.sketchName] = self.locationY
 		#If they hit cancel or didnt name their sketch
 		else:
 			planeFlushPaint(self.allSketchPlanes[''],[]);
 			self.allSketchPlanes.pop('')
 			self.allSketches.pop('')
-			self.sketchLabels.pop('')
-
+			if self.zoom:
+				self.zoomSketchLabels.pop('')
+			else:
+				self.sketchLabels.pop('')
 	def make_connections(self): 
 		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
