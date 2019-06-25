@@ -23,7 +23,8 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String, Int16
 #from airsim_bridge.srv import
 import signal
-from interface.msg import *
+from harps_interface.msg import *
+from harps_interface.images import *
 # from observation_interface.msg import *
 
 # For viewing the image topic
@@ -100,7 +101,7 @@ vertNum = 4
 # 		# # unpack data into array
 # 		unpacked_data = array.array('H',image_data)
 # 		# # swap bytes (to swap B and R)
-# 		# unpacked_data.by/teswap() # causes strange vertical line artifacts
+# 		# unpacked_data.byteswap() # causes strange vertical line artifacts
 # 		# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
 # 		# # repack with opposite endian format
 # 		# unpacked_data.reverse()
@@ -232,6 +233,8 @@ class SimulationWindow(QWidget):
 		self.setWindowTitle("SI-HARPS BluePrint");
 		self.setStyleSheet("background-color:slategray;")
 		self.populateInterface(); 
+		self.populated = True
+
 
 		self.make_connections();
 		self.showMaximized();
@@ -251,10 +254,12 @@ class SimulationWindow(QWidget):
 		self.points = []
 		self.currentCamTab = 0
 		self.vertNum = 4
+		self.bridge = CvBridge()
+		# self.populated = False
 		#self.show();
 
 		self.zoom = False
-		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
+		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
@@ -264,11 +269,10 @@ class SimulationWindow(QWidget):
 		self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
-		self.bridge = CvBridge()
 		self.cam_num.publish(0)
 
-		# rate = rospy.Rate(10) # 10hz
-		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+		rate = rospy.Rate(10) # 10hz
+		# self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
 
 	def resizeEvent(self,event):
 		print("WindowResized"); 
@@ -280,12 +284,12 @@ class SimulationWindow(QWidget):
 		# 	for key in self.allSketchPlanes.keys():
 		# 		allSketchPlanes[key].pixmap().scaled(self.minimapView.size()); 
 
-	@pyqtSlot(QImage)
-	def setDroneImage(self, image):
-		print("Set Image")
-		tab = self.cameraTabs.currentIndex()
+	# @pyqtSlot(QImage)
+	# def setDroneImage(self, image):
+	# 	print("Set Image")
+	# 	tab = self.cameraTabs.currentIndex()
 		
-		self.cameraFeed1.setPixmap(QPixmap(image))
+	# 	self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
 
@@ -504,10 +508,13 @@ class SimulationWindow(QWidget):
 		f.setPointSize(18) # sets the size to 18
 		self.npcBox.setFont(f)
 		self.generateInput()
+
 		
 		timer = QTimer(self)
 		timer.timeout.connect(self.generateInput)
    		timer.start(self.out['duration'])
+		
+
 
 
 		self.layout.addLayout(sliderLayout,15,1,2,14) 
@@ -530,12 +537,12 @@ class SimulationWindow(QWidget):
 		self.currentCamTab = self.cameraTabs.currentIndex()
 		print(self.currentCamTab)
 		self.cam_num.publish(self.currentCamTab)
-		self.new_image.unregister()
+		# self.new_image.unregister()
 
 		# if self.currentCamTab is 4:
 		# 	# print("Hello")
 		# 	# self.new_image.unregister()
-		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.EmitSetDroneImage)
+		# self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.EmitSetDroneImage)
 		# else:
 		# 	# self.new_image.unregister()
 		# 	self.new_image = rospy.Subscriber("/Camera%d/image_raw" % (self.currentCamTab +1), Image, self.EmitSetDroneImage)
@@ -648,14 +655,19 @@ class SimulationWindow(QWidget):
 			if(dialog.clickedButton().text() == "Yes"):
 				event.ignore(); '''
 
-	def EmitSetDroneImage(self, msg):
+	def SetDroneImage(self, msg):
+
+		if not self.populated:
+			print(self.populated)
+			return
+
 		# print("Emit Drone Image")
 		image_data = msg.data
 		image_height = msg.height
 		image_width = msg.width
 		bytes_per_line = msg.step
 
-		cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
+		# cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
 
 		# convert image from little endian BGR to big endian RGB
 		length = int(len(image_data)/2)
@@ -668,13 +680,17 @@ class SimulationWindow(QWidget):
 		# unpacked_data.reverse()
 		image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
 
-		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGBA8888)
+		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGB32)
 
 		# self.image = self.image.mirrored(True,True)
-		# print("emitting")
-		# self.dronePixMap.emit(self.image)
+		# print(self.image)
+		# print(self.cameraFeed1)
+		self.dronePixMap.emit(self.image)
+		# nimage = QPixmap.fromImage(self.image)
 		if self.currentCamTab is 0:
+			# print("cam tab 0")
 			self.cameraFeed1.setPixmap(QPixmap(self.image))	
+			# print("afterset pix map")
 		elif self.currentCamTab is 1:
 			self.cameraFeed2.setPixmap(QPixmap(self.image))
 		elif self.currentCamTab is 2:
