@@ -153,4 +153,6 @@ def reTile(wind,pixmapArray):
 			pixmapArray[i][j].setScale(1)
 			pixmapArray[i][j].setZValue(-1)
 			#map plane ------------------
+	wind.topLayer.setZValue(-1)
+	wind.beliefLayer.setZValue(0)
 	return pixmapArray
