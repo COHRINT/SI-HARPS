@@ -529,8 +529,8 @@ def drawIcons(wind, name,centx,centy,x,y):
 	rel_y = temp2*wind.res + y*temp
 
 	radius = 5
-	for name in wind.zoomSketchLabels.keys():
-		planeFlushPaint(wind.allIconPlanes[name])
+	#for name in wind.zoomSketchLabels.keys():
+		#planeFlushPaint(wind.allIconPlanes[name])
 
 	pm = wind.allIconPlanes[name].pixmap(); 
 	painter = QPainter(pm); 

@@ -200,7 +200,9 @@ def redrawSketches(wind):
 	if wind.sketchLabels and not wind.zoom:
 		for name in wind.sketchLabels.keys():
 			updateModels(wind,name,wind.vertNum,False,wind.zoom); 
+	if wind.zoomSketchLabels and not wind.zoom:
 		for name in wind.zoomSketchLabels.keys():
+			planeFlushPaint(wind.allIconPlanes[name])
 			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
 
 def pushButtonPressed(wind):
