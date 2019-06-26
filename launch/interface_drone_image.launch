@@ -1,0 +1,4 @@
+<launch>
+    <node name="image_publisher" type="2droneimages.py" pkg="airsim_bridge" />
+    <node name="camera_view_client" type="designInterface.py" pkg="harps_interface" />
+</launch>

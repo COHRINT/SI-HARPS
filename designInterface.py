@@ -24,7 +24,7 @@ from std_msgs.msg import String, Int16
 #from airsim_bridge.srv import
 import signal
 from harps_interface.msg import *
-from harps_interface.images import *
+# from harps_interface.images import *
 # from observation_interface.msg import *
 
 # For viewing the image topic
@@ -263,22 +263,16 @@ class SimulationWindow(QWidget):
 		self.points = []
 		self.currentCamTab = 0
 		self.vertNum = 4
-<<<<<<< HEAD
 		self.bridge = CvBridge()
 		# self.populated = False
 		#self.show();
-
-		self.zoom = False
-		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
-=======
 		self.allSketchX = {}
 		self.allSketchY = {}
 		#self.show();
 
 		self.zoom = False
 
-		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
->>>>>>> 646fda132cb44948683f2a28395427bd895ea58e
+		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
@@ -558,22 +552,6 @@ class SimulationWindow(QWidget):
 		self.cam_num.publish(self.currentCamTab)
 		# self.new_image.unregister()
 
-		# if self.currentCamTab is 4:
-		# 	# print("Hello")
-		# 	# self.new_image.unregister()
-		# self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.EmitSetDroneImage)
-		# else:
-		# 	# self.new_image.unregister()
-		# 	self.new_image = rospy.Subscriber("/Camera%d/image_raw" % (self.currentCamTab +1), Image, self.EmitSetDroneImage)
-
-		# if self.currentCamTab is 0:
-		# 	print("Show camera 1")
-		# 	self.new_image.unregister()
-		# 	self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
-		# elif self.currentCamTab is 1:
-		# 	print("Show camera 2s")
-		# 	self.new_image.unregister()
-		# 	self.new_image = rospy.Subscriber("/Camera2/image_raw", Image, self.EmitSetDroneImage)
 	def flash(self):
 		self.npcBox.setStyleSheet("border: 4px inset white")
 		self.npcBox.update()
@@ -696,30 +674,35 @@ class SimulationWindow(QWidget):
 		image_width = msg.width
 		bytes_per_line = msg.step
 
-		# cv_image = self.bridge.imgmsg_to_cv2(msg, "rgba8")
+		
+
+		# cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+		# cv_image = cv2.cvtColor(cv_image,cv2.COLOR_BGR2RGB)
+
 
 		# convert image from little endian BGR to big endian RGB
 		length = int(len(image_data)/2)
 		# # unpack data into array
 		unpacked_data = array.array('H',image_data)
 		# # swap bytes (to swap B and R)
-		# unpacked_data.by/teswap() # causes strange vertical line artifacts
-		# unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
+		unpacked_data.byteswap() # causes strange vertical line artifacts
+		unpacked_data.reverse() #<>NOTE: reversing the entire list of bytes causes the image to be displayed upside down, but also removes artifacts for some reason
 		# # repack with opposite endian format
 		# unpacked_data.reverse()
 		image_data = struct.pack('<'+str(length)+'H',*unpacked_data)
 
-		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGB32)
-
-		# self.image = self.image.mirrored(True,True)
+		# self.image = QImage(cv_image.data, cv_image.cols, cv_image.rows, cv_image.step, QImage.Format_RGB888)
+		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGB888)
+		# print(bytes_per_line)
+		self.image = self.image.mirrored(True,True)
 		# print(self.image)
 		# print(self.cameraFeed1)
-		self.dronePixMap.emit(self.image)
+		# self.dronePixMap.emit(self.image)
 		# nimage = QPixmap.fromImage(self.image)
 		if self.currentCamTab is 0:
-			# print("cam tab 0")
-			self.cameraFeed1.setPixmap(QPixmap(self.image))	
-			# print("afterset pix map")
+			self.cameraFeed1.setScaledContents(True); 
+			self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+			self.cameraFeed1.setPixmap(QPixmap(self.image))
 		elif self.currentCamTab is 1:
 			self.cameraFeed2.setPixmap(QPixmap(self.image))
 		elif self.currentCamTab is 2:
@@ -728,7 +711,7 @@ class SimulationWindow(QWidget):
 			self.cameraFeed4.setPixmap(QPixmap(self.image))
 		elif self.currentCamTab is 4:
 			self.cameraFeed5.setPixmap(QPixmap(self.image))
-	
+		# self.image.setZValue(4)
 
 def main():
 		app = QApplication(sys.argv)
