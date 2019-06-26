@@ -24,7 +24,6 @@ from std_msgs.msg import String, Int16
 #from airsim_bridge.srv import
 import signal
 from harps_interface.msg import *
-from harps_interface.images import *
 # from observation_interface.msg import *
 
 # For viewing the image topic
@@ -128,6 +127,8 @@ def imageMousePress(QMouseEvent,wind):
 	if(wind.sketchListen):
 		name = ''
 		wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
+		if wind.zoom:
+			wind.allIconPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
 
 
 def imageMouseMove(QMouseEvent,wind):
@@ -147,12 +148,10 @@ def imageMouseMove(QMouseEvent,wind):
 		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
 
 def imageMouseRelease(QMouseEvent,wind):
-	print("mouse release")
 	name = ''
-	# print(wind.allSketchPaths[-1])
 	wind.allSketches[name] = wind.allSketchPaths[-1]; 
-	drawing = updateModels(wind, name, wind.vertNum, False,wind.zoom)
-	#wind.sket = cutImage(wind,drawing)
+	updateModels(wind, name, wind.vertNum, False,wind.zoom)
+
 	if(wind.sketchingInProgress):
 		print 'A new sketch, hazzah!'
 		wind.sketch.emit() #emit pyqtSignal to get to self.sketch_client()
@@ -161,23 +160,31 @@ def imageMouseRelease(QMouseEvent,wind):
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
 	tmp = [int(QwheelEvent.x()),int(QwheelEvent.y())];
-
 	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
-
 	#print QwheelEvent.angleDelta()
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
+		if wind.single == True:
+			wind.sliderTmp = wind.beliefOpacitySlider.value()
+		wind.beliefOpacitySlider.setSliderPosition(0)
+		wind.beliefOpacitySlider.setEnabled(False)
 		wind.pic[x][y].setScale(wind.res)
 		wind.topLayer.setZValue(-1)
 		wind.locationX = x
 		wind.locationY = y
 		for name in wind.sketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
-		#redrawSketches(wind)
+		for name in wind.zoomSketchLabels.keys():
+			planeFlushPaint(wind.allIconPlanes[name])
+		wind.single = False
+
 	if QwheelEvent.angleDelta().y() < 0:
 		wind.zoom = False
+		wind.single = True
+		wind.beliefOpacitySlider.setEnabled(True)
+		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
 		wind.minimapScene.removeItem(wind.pic[x][y])
 		reTile(wind,wind.pic)
 		redrawSketches(wind)
@@ -185,13 +192,16 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefLayer.setZValue(1)
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
+			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
 
 def redrawSketches(wind):
 	print("redraw")
 	#print("Redrawing
 	if wind.sketchLabels and not wind.zoom:
 		for name in wind.sketchLabels.keys():
-			updateModels(wind,name,wind.vertNum,True,wind.zoom); 
+			updateModels(wind,name,wind.vertNum,False,wind.zoom); 
+		for name in wind.zoomSketchLabels.keys():
+			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
 
 def pushButtonPressed(wind):
 	print("Publish Push Message!!!");
@@ -254,6 +264,7 @@ class SimulationWindow(QWidget):
 		self.allSketchNames = []; 
 		self.allSketchPaths = []; 
 		self.allSketchPlanes = {}; 
+		self.allIconPlanes = {};
 		self.sketchLabels = {}; 
 		self.zoomSketchLabels = {};
 		self.sketchDensity = 3; #radius in pixels of drawn sketch points
@@ -261,22 +272,25 @@ class SimulationWindow(QWidget):
 		self.points = []
 		self.currentCamTab = 0
 		self.vertNum = 4
-<<<<<<< HEAD
 		self.bridge = CvBridge()
+		self.sliderTmp = 30
+
 		# self.populated = False
 		#self.show();
 
 		self.zoom = False
+		self.single = True
 		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
-=======
+
 		self.allSketchX = {}
 		self.allSketchY = {}
+		self.zoomCentx = {}
+		self.zoomCenty = {}
 		#self.show();
 
 		self.zoom = False
 
-		self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
->>>>>>> 646fda132cb44948683f2a28395427bd895ea58e
+		#self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
@@ -316,6 +330,8 @@ class SimulationWindow(QWidget):
 
 		#make sketchPlane --------------------
 		self.sketchPlane = makeTransparentPlane(self);
+		#make iconPlane --------------------
+		self.iconPlane = makeTransparentPlane(self);
 
 		self.pix = QPixmap('less_oldFlyoverton.png'); 
 		self.belief = QPixmap('less_oldBelief.png')
@@ -612,6 +628,7 @@ class SimulationWindow(QWidget):
 		if okPressed and len(self.sketchName) != 0:
 			if self.zoom == True:
 				self.zoomSketchLabels[self.sketchName] = self.zoomSketchLabels.pop('')
+				self.allIconPlanes[self.sketchName] = self.allIconPlanes.pop('')
 			else:
 				self.sketchLabels[self.sketchName] = self.sketchLabels.pop('')
 			#If the sketch name is new
@@ -628,10 +645,12 @@ class SimulationWindow(QWidget):
 				self.allSketches.pop('')
 			#Redraw regardless
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
-			updateModels(self,self.sketchName, self.vertNum,True,self.zoom)
+			pm,centx,centy = updateModels(self,self.sketchName, self.vertNum,True,self.zoom)
 			if self.zoom == True:
 				self.allSketchX[self.sketchName] = self.locationX
 				self.allSketchY[self.sketchName] = self.locationY
+				self.zoomCentx[self.sketchName] = centx
+				self.zoomCenty[self.sketchName] = centy
 		#If they hit cancel or didnt name their sketch
 		else:
 			planeFlushPaint(self.allSketchPlanes[''],[]);
@@ -650,7 +669,7 @@ class SimulationWindow(QWidget):
 		self.minimapView.mouseMoveEvent = lambda event:imageMouseMove(event,self); 
 		self.minimapView.mouseReleaseEvent = lambda event:imageMouseRelease(event,self);
 
-		#If you want zoom
+		#Zoom
 		self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
 
 		#Handler for final sketches

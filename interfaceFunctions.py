@@ -245,7 +245,6 @@ def updateModels(wind,name, vertNum, pub,zoom):
 		wind.sketchPub.publish(msg)
 		rate.sleep()
 
-
 	pm = wind.allSketchPlanes[name].pixmap(); 
 	painter = QPainter(pm); 
 	pen = QPen(QColor(255,0,0,255*wind.sketchOpacitySlider.sliderPosition()/100)); 
@@ -262,7 +261,7 @@ def updateModels(wind,name, vertNum, pub,zoom):
 	painter.end(); 
 	wind.allSketchPlanes[name].setPixmap(pm); 
 
-	return pm
+	return pm,centx,centy
 	'''#wind.assumedModel.makeSketch(vertices,name);
 
 
@@ -428,7 +427,6 @@ def revealMapDrone(wind,point):
 	rad = wind.DRONE_VIEW_RADIUS;
 	points=[]; 
 
-	print()
 	for i in range(-int(rad/2)+int(point[0]),int(rad/2)+int(point[0])):
 		for j in range(-int(rad/2) + int(point[1]),int(rad/2)+int(point[1])):
 			tmp1 = min(wind.imgWidth-1,max(0,i)); 
@@ -512,9 +510,35 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.pic[i][j])
 		wind.minimapScene.addItem(wind.pic[x][y])
 		wind.pic[x][y].setPos(0,0)
-	print wind.allSketchX
 
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
-			
+
+def drawIcons(wind, name,centx,centy,x,y):
+	#wind.zoomSketchLabels[name] = [centx,centy]; 
+	temp = wind.pix.width()/wind.res
+	scale = centx/wind.res
+	temp2 = temp/scale
+	rel_x = temp2*wind.res + x*temp 
+	print x
+
+	temp = wind.pix.height()/wind.res
+	scale = centy/wind.res
+	temp2 = temp/scale
+	rel_y = temp2*wind.res + y*temp
+
+	radius = 5
+	for name in wind.zoomSketchLabels.keys():
+		planeFlushPaint(wind.allIconPlanes[name])
+
+	pm = wind.allIconPlanes[name].pixmap(); 
+	painter = QPainter(pm); 
+	pen = QPen(QColor(255,0,0,255*wind.sketchOpacitySlider.sliderPosition()/100)); 
+	pen.setWidth(10); 
+	painter.setPen(pen); 
+	painter.setFont(QtGui.QFont('Decorative',15)); 
+	painter.drawText(QPointF(rel_x+10,rel_y),name); 
+	painter.drawEllipse(QPointF(rel_x,rel_y), radius, radius);
+	painter.end()
+	wind.allIconPlanes[name].setPixmap(pm); 
