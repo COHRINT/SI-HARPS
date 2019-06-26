@@ -160,10 +160,13 @@ def imageMouseRelease(QMouseEvent,wind):
 
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
-	tmp = [int(QwheelEvent.x()),int(QwheelEvent.y())];
-	x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
-	y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
-	#print QwheelEvent.angleDelta()
+	tmp = [(QwheelEvent.x()),(QwheelEvent.y())];
+	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
+	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
+	point = wind.minimapView.mapToScene(tmp[0],tmp[1])
+	x = int(point.x()/wind.pix.width()*wind.res)
+	y = int(point.y()/wind.pix.height()*wind.res)
+
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
@@ -343,7 +346,7 @@ class SimulationWindow(QWidget):
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
-		self.belief = self.belief.scaled(self.pix.width(),self.pix.height())
+		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		self.pic = cutImage(self, self.old)
 
 		#self.minimapView.fitInView(QRectF(self.pix.rect())); 
@@ -357,6 +360,12 @@ class SimulationWindow(QWidget):
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
 		self.layout.addWidget(self.minimapView,1,1,14,13);
+
+		print self.pix.size()
+		print self.old.size()
+		print self.sketchPlane.size()
+		print self.belief.size()
+		print self.iconPlane.size()
 
 		#Tabbed Camerafeeds ----------------------
 
