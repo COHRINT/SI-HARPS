@@ -518,8 +518,8 @@ def zoomIn(wind,x,y):
 def drawIcons(wind, name,centx,centy,x,y):
 	point = wind.minimapView.mapToScene(centx,centy)
 	#wind.zoomSketchLabels[name] = [centx,centy]; 
-	rel_x = centx/wind.res + x*wind.minimapScene.width()/wind.res
-	rel_y = centy/wind.res + y*wind.minimapScene.width()/wind.res
+	rel_x = point.x()/wind.res + x*wind.minimapScene.width()/wind.res
+	rel_y = point.y()/wind.res + y*wind.minimapScene.height()/wind.res
 	radius = 5
 	#for name in wind.zoomSketchLabels.keys():
 		#planeFlushPaint(wind.allIconPlanes[name])
@@ -530,8 +530,7 @@ def drawIcons(wind, name,centx,centy,x,y):
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',15)); 
-	painter.drawText(QPointF(rel_x+(8-7*x),rel_y-(y+5)),name); 
+	painter.drawText(QPointF(rel_x,rel_y),name); 
 	painter.drawEllipse(QPointF(rel_x,rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
-

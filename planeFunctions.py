@@ -139,7 +139,7 @@ def cutImage(wind, image):
 		for j in range(0,wind.res):
 			wind.pics = image.copy(QRect(image.width()/wind.res*i,image.height()/wind.res*j,wind.tileX_len,wind.tileY_len))
 			pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
-			pixmapArray[i][j].setPos(image.width()/wind.res*i,image.height()/wind.res*j)
+			pixmapArray[i][j].setPos(wind.tileX_len*i,wind.tileY_len*j)
 			wind.minimapScene.addItem(pixmapArray[i][j])
 			pixmapArray[i][j].setZValue(-1)
 			#map plane ------------------

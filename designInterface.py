@@ -164,8 +164,8 @@ def imageMouseScroll(QwheelEvent,wind):
 	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
 	point = wind.minimapView.mapToScene(tmp[0],tmp[1])
-	x = int(point.x()/wind.pix.width()*wind.res)
-	y = int(point.y()/wind.pix.height()*wind.res)
+	x = int(point.x()/wind.minimapScene.width()*wind.res)
+	y = int(point.y()/wind.minimapScene.height()*wind.res)
 
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
@@ -349,8 +349,6 @@ class SimulationWindow(QWidget):
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		self.pic = cutImage(self, self.old)
 
-		#self.minimapView.fitInView(QRectF(self.pix.rect())); 
-
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
 		self.beliefLayer.setZValue(1) 
@@ -360,13 +358,6 @@ class SimulationWindow(QWidget):
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
 		self.layout.addWidget(self.minimapView,1,1,14,13);
-
-		print self.pix.size()
-		print self.old.size()
-		print self.sketchPlane.size()
-		print self.belief.size()
-		print self.minimapScene.sceneRect()
-		print self.minimapView.sceneRect()
 
 		#Tabbed Camerafeeds ----------------------
 
