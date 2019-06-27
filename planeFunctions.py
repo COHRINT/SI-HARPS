@@ -133,13 +133,13 @@ def paintPixToPix(planeWidget,newPM,opacity):
 def cutImage(wind, image):
 	pixmapArray = QGraphicsPixmapItem()
 	pixmapArray = [[ 0 for x in range(0,wind.res)] for y in range(0,wind.res)]
-	wind.tileX_len=wind.pix.width()/wind.res
-	wind.tileY_len=wind.pix.height()/wind.res
+	wind.tileX_len=image.width()/wind.res
+	wind.tileY_len=image.height()/wind.res
 	for i in range(0,wind.res):
 		for j in range(0,wind.res):
-			wind.pics = image.copy(QRect(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j,wind.tileX_len,wind.tileY_len))
+			wind.pics = image.copy(QRect(image.width()/wind.res*i,image.height()/wind.res*j,wind.tileX_len,wind.tileY_len))
 			pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
-			pixmapArray[i][j].setPos(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j)
+			pixmapArray[i][j].setPos(image.width()/wind.res*i,image.height()/wind.res*j)
 			wind.minimapScene.addItem(pixmapArray[i][j])
 			pixmapArray[i][j].setZValue(-1)
 			#map plane ------------------
