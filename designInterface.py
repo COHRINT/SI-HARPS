@@ -337,7 +337,7 @@ class SimulationWindow(QWidget):
 		#make sketchPlane --------------------
 		self.sketchPlane = makeTransparentPlane(self);
 		#make iconPlane --------------------
-		self.iconPlane = makeTransparentPlane(self);
+		self.iconPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
 		self.pix = QPixmap('less_oldFlyoverton.png'); 
 		self.belief = QPixmap('less_oldBelief.png')
@@ -365,7 +365,8 @@ class SimulationWindow(QWidget):
 		print self.old.size()
 		print self.sketchPlane.size()
 		print self.belief.size()
-		print self.iconPlane.size()
+		print self.minimapScene.sceneRect()
+		print self.minimapView.sceneRect()
 
 		#Tabbed Camerafeeds ----------------------
 
@@ -604,7 +605,7 @@ class SimulationWindow(QWidget):
 		timer2.timeout.connect(self.flash)
 		timer2.start(self.out['flash'])
 
-	def mux_client(self):   ##This will (probably) be handy for switching feeds, look into multiplex switcher
+	'''def mux_client(self):   ##This will (probably) be handy for switching feeds, look into multiplex switcher
 		try:
 			mux = rospy.ServiceProxy('/mux/select', MuxSelect)               
 			req = MuxSelectRequest(topic='/camera/camera'+ self.cameraTabs.currentIndex()) #request a new topic
@@ -612,7 +613,7 @@ class SimulationWindow(QWidget):
 			return resp
 				
 		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
+			print "Service call failed: %s"%e'''
 
 	def sketch_client(self):  #For the pop up when a sketch occurs
 		print("Sketch Client")
