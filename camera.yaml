@@ -1,0 +1,9 @@
+camera1:
+  x: 100
+  y: 333
+  orientation: 5
+
+camera2:
+  x: 438
+  y: 557
+  orientation: 4

@@ -182,6 +182,7 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allSketchPlanes[name])
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allIconPlanes[name])
+		planeFlushPaint(wind.iconPlane)
 		wind.single = False
 
 	if QwheelEvent.angleDelta().y() < 0:
@@ -197,6 +198,7 @@ def imageMouseScroll(QwheelEvent,wind):
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
+		drawCameras(wind)
 
 def redrawSketches(wind):
 	print("redraw")
@@ -292,6 +294,8 @@ class SimulationWindow(QWidget):
 		self.allSketchY = {}
 		self.zoomCentx = {}
 		self.zoomCenty = {}
+		self.rel_x = 0
+		self.rel_y = 0
 		#self.show();
 
 		self.zoom = False
@@ -554,8 +558,11 @@ class SimulationWindow(QWidget):
 		timer = QTimer(self)
 		timer.timeout.connect(self.generateInput)
    		timer.start(self.out['duration'])
-		
 
+		#Get all cameras from yaml file
+		with open("camera.yaml", 'r') as fp:
+			self.cameras = yaml.load(fp)
+		print self.cameras
 
 
 		self.layout.addLayout(sliderLayout,15,1,2,14) 

@@ -234,6 +234,11 @@ def updateModels(wind,name, vertNum, pub,zoom):
 
 		for i in range(0, len(vertices)):
 			print(i)
+			#if wind.zoom:
+			#	msg.points[i].x = vertices[i][0]/wind.res + x*wind.minimapScene.width()/wind.res
+			#	msg.points[i].y = vertices[i][1]/wind.res + y*wind.minimapScene.height()/wind.res
+			#	msg.points[i].z = 0
+			#else:
 			msg.points[i].x = vertices[i][0]
 			msg.points[i].y = vertices[i][1]
 			msg.points[i].z = 0
@@ -518,9 +523,9 @@ def zoomIn(wind,x,y):
 def drawIcons(wind, name,centx,centy,x,y):
 	point = wind.minimapView.mapToScene(centx,centy)
 	#wind.zoomSketchLabels[name] = [centx,centy]; 
-	rel_x = point.x()/wind.res + x*wind.minimapScene.width()/wind.res
-	rel_y = point.y()/wind.res + y*wind.minimapScene.height()/wind.res
-	radius = 5
+	wind.rel_x = point.x()/wind.res + x*wind.minimapScene.width()/wind.res
+	wind.rel_y = point.y()/wind.res + y*wind.minimapScene.height()/wind.res
+	radius = 1
 	#for name in wind.zoomSketchLabels.keys():
 		#planeFlushPaint(wind.allIconPlanes[name])
 
@@ -530,7 +535,14 @@ def drawIcons(wind, name,centx,centy,x,y):
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',15)); 
-	painter.drawText(QPointF(rel_x,rel_y),name); 
-	painter.drawEllipse(QPointF(rel_x,rel_y), radius, radius);
+	painter.drawText(QPointF(wind.rel_x,wind.rel_y),name); 
+	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
+
+def drawCameras(wind):
+	pm = wind.iconPlane.pixmap()
+	painter = QPainter(pm); 
+	painter.drawEllipse(QPointF(350,350), 100, 100);
+	painter.end()
+	wind.iconPlane.setPixmap(pm); 
