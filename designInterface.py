@@ -182,8 +182,10 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allSketchPlanes[name])
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allIconPlanes[name])
-		planeFlushPaint(wind.iconPlane)
+		for item in wind.cameras.keys():
+			planeFlushPaint(wind.allIconPlanes[item])
 		wind.single = False
+
 
 	if QwheelEvent.angleDelta().y() < 0:
 		wind.zoom = False
@@ -198,7 +200,8 @@ def imageMouseScroll(QwheelEvent,wind):
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
-		drawCameras(wind)
+		
+		wind.cameraSketch.emit()
 
 def redrawSketches(wind):
 	print("redraw")
@@ -242,6 +245,7 @@ def pullIDKPressed(wind):
 
 class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
+	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
 
 	def __init__(self):
@@ -282,6 +286,7 @@ class SimulationWindow(QWidget):
 		self.vertNum = 4
 		self.bridge = CvBridge()
 		self.sliderTmp = 30
+		self.cameras = {}
 
 		# self.populated = False
 		#self.show();
@@ -457,11 +462,13 @@ class SimulationWindow(QWidget):
 		self.pushLayout.addWidget(self.pushLabel,9,16,1,3); 
 
 		self.positivityDrop = QComboBox(); 
+		self.positivityDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
 		self.positivityDrop.addItem("Is"); 
 		self.positivityDrop.addItem("Is not"); 
 		self.pushLayout.addWidget(self.positivityDrop,9,19,1,3); 
 
 		self.relationsDrop = QComboBox();
+		self.relationsDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
 		self.relationsDrop.addItem("Near"); 
 		self.relationsDrop.addItem("North of"); 
 		self.relationsDrop.addItem("South of");
@@ -470,6 +477,7 @@ class SimulationWindow(QWidget):
 		self.pushLayout.addWidget(self.relationsDrop,9,22,1,3); 
 
 		self.objectsDrop = QComboBox();
+		self.objectsDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
 		self.objectsDrop.addItem("You"); 
 		self.pushLayout.addWidget(self.objectsDrop,9,25,1,3); 
 
@@ -487,6 +495,7 @@ class SimulationWindow(QWidget):
 		pullBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey;}")
 
 		self.pullQuestion = QLineEdit("Awaiting Query");
+		self.pullQuestion.setStyleSheet("color: white")
 		self.pullQuestion.setReadOnly(True); 
 		self.pullQuestion.setAlignment(QtCore.Qt.AlignCenter); 
 		f = self.pullQuestion.font(); 
@@ -554,18 +563,13 @@ class SimulationWindow(QWidget):
 		self.npcBox.setFont(f)
 		self.generateInput()
 
-		
+
 		timer = QTimer(self)
 		timer.timeout.connect(self.generateInput)
    		timer.start(self.out['duration'])
 
-		#Get all cameras from yaml file
-		with open("camera.yaml", 'r') as fp:
-			self.cameras = yaml.load(fp)
-		print self.cameras
-
-
 		self.layout.addLayout(sliderLayout,15,1,2,14) 
+
 	def keyPressEvent(self,event): #Future implementation space bar pause
 		#print("ENTER KEY")
 		if(event.key() == QtCore.Qt.Key_Space):
@@ -596,7 +600,6 @@ class SimulationWindow(QWidget):
    		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' \
    			+ np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
    		self.npcBox.update()
-
 
    		timer2 = QTimer(self)
    		timer2.setSingleShot(True)
@@ -655,6 +658,15 @@ class SimulationWindow(QWidget):
 				self.zoomSketchLabels.pop('')
 			else:
 				self.sketchLabels.pop('')
+
+	def cameraSketchClient(self):
+		with open("camera.yaml", 'r') as fp:
+			self.cameras = yaml.load(fp)
+		for item in self.cameras:
+			self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
+			drawCameras(self,item)
+
+
 	def make_connections(self): 
 		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
@@ -669,6 +681,7 @@ class SimulationWindow(QWidget):
 
 		#Handler for final sketches
 		self.sketch.connect(self.sketch_client)
+		self.cameraSketch.connect(self.cameraSketchClient)
 
 		#Handlers for sliders
 		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 

@@ -1,9 +1,21 @@
-camera1:
-  x: 100
-  y: 333
-  orientation: 5
+1:
+  x: 501
+  y: -100
+  orientation: 90
 
-camera2:
+2:
   x: 438
   y: 557
+  orientation: 0
+3:
+  x: 838
+  y: 557
+  orientation: 20
+4:
+  x: 438
+  y: 757
   orientation: 4
+5:
+  x: 438
+  y: 157
+  orientation: 10

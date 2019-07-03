@@ -30,6 +30,7 @@ from scipy.spatial import ConvexHull
 import time
 import math
 import rospy
+import yaml
 from interface.msg import *
 
 from planeFunctions import *;
@@ -539,10 +540,20 @@ def drawIcons(wind, name,centx,centy,x,y):
 	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
+	wins.iconPLane.setZValue(1)
 
-def drawCameras(wind):
-	pm = wind.iconPlane.pixmap()
+def drawCameras(wind,item):
+	pm = wind.allIconPlanes[item].pixmap()
+	pic = QImage('camera.png')
+	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
-	painter.drawEllipse(QPointF(350,350), 100, 100);
+	pen = QPen(QColor(255,0,0,255)); 
+	pen.setWidth(10); 
+	painter.setPen(pen); 
+	painter.rotate(wind.cameras[item]['orientation'])
+	#painter.translate(wind.cameras[item]['x'],wind.cameras[item]['y'])
+	painter.drawText(wind.cameras[item]['x']+23,wind.cameras[item]['y']+35,str(item)); 
+	painter.drawImage(wind.cameras[item]['x'],wind.cameras[item]['y'], pic,0,0,61,60);
+
 	painter.end()
-	wind.iconPlane.setPixmap(pm); 
+	wind.allIconPlanes[item].setPixmap(pm); 
