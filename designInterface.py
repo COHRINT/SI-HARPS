@@ -119,13 +119,18 @@ def signal_handler(signal, frame):
 
 #Mouse commands are overloaded to make temporary sketch that is confirmed or destroyed later 
 def imageMousePress(QMouseEvent,wind):
-	wind.sketchListen=True;
-	wind.allSketchPaths.append([]); 
-
 	tmp = [QMouseEvent.localPos().x(),QMouseEvent.localPos().y()]; 
  
+	if QMouseEvent.button() == Qt.LeftButton:
+		wind.sketchListen=True;
+	if QMouseEvent.button() == Qt.RightButton:
+		wind.rightClick.emit(tmp[0],tmp[1])
+		wind.sketchListen=False;
+
  	#print(tmp); 
 	if(wind.sketchListen):
+		wind.allSketchPaths.append([]); 
+		#wind.sketchingInProgress = True
 		name = ''
 		wind.allSketchPlanes[name] = wind.minimapScene.addPixmap(makeTransparentPlane(wind));
 		if wind.zoom:
@@ -134,7 +139,7 @@ def imageMousePress(QMouseEvent,wind):
 
 def imageMouseMove(QMouseEvent,wind):
 	wind.sketchingInProgress = True; 
-	if(wind.sketchingInProgress):
+	if(wind.sketchingInProgress and wind.sketchListen):
 		tmp = [int(QMouseEvent.localPos().x()),int(QMouseEvent.localPos().y())];
 		#print(tmp);  
 		wind.allSketchPaths[-1].append(tmp); 
@@ -149,12 +154,13 @@ def imageMouseMove(QMouseEvent,wind):
 		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
 
 def imageMouseRelease(QMouseEvent,wind):
-	name = ''
-	wind.allSketches[name] = wind.allSketchPaths[-1]; 
-	updateModels(wind, name, wind.vertNum, False,wind.zoom)
+	if(wind.sketchingInProgress and wind.sketchListen):
+		name = ''
+		wind.allSketches[name] = wind.allSketchPaths[-1]; 
+		updateModels(wind, name, wind.vertNum, False,wind.zoom)
 
-	if(wind.sketchingInProgress):
-		print 'A new sketch, hazzah!'
+
+		print ('A new sketch, hazzah!')
 		wind.sketch.emit() #emit pyqtSignal to get to self.sketch_client()
 		wind.sketchingInProgress = False;
 
@@ -182,10 +188,11 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allSketchPlanes[name])
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allIconPlanes[name])
-		for item in wind.cameras.keys():
+		for item in wind.cameras:
 			planeFlushPaint(wind.allIconPlanes[item])
-		wind.single = False
 
+
+		wind.single = False
 
 	if QwheelEvent.angleDelta().y() < 0:
 		wind.zoom = False
@@ -200,8 +207,12 @@ def imageMouseScroll(QwheelEvent,wind):
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
-		
-		wind.cameraSketch.emit()
+		for item in wind.cameras:
+			drawCameras(wind,item)
+		for name in wind.allDuffelNames:
+			planeFlushPaint(wind.allIconPlanes[name])
+
+
 
 def redrawSketches(wind):
 	print("redraw")
@@ -247,6 +258,7 @@ class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
 	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
+	rightClick = pyqtSignal(int,int)
 
 	def __init__(self):
 
@@ -275,6 +287,7 @@ class SimulationWindow(QWidget):
 		self.allSketches = {}; 
 		self.allSketchNames = []; 
 		self.allSketchPaths = []; 
+		self.allDuffelNames = [];
 		self.allSketchPlanes = {}; 
 		self.allIconPlanes = {};
 		self.sketchLabels = {}; 
@@ -287,6 +300,7 @@ class SimulationWindow(QWidget):
 		self.bridge = CvBridge()
 		self.sliderTmp = 30
 		self.cameras = {}
+		self.countDuffel = 0
 
 		# self.populated = False
 		#self.show();
@@ -654,7 +668,7 @@ class SimulationWindow(QWidget):
 			planeFlushPaint(self.allSketchPlanes[''],[]);
 			self.allSketchPlanes.pop('')
 			self.allSketches.pop('')
-			if self.zoom:
+			if self.zoom and self.zoomSketchLabels:
 				self.zoomSketchLabels.pop('')
 			else:
 				self.sketchLabels.pop('')
@@ -666,8 +680,29 @@ class SimulationWindow(QWidget):
 			self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
 			drawCameras(self,item)
 
+	def rightClickClient(self,x,y):
+		name = 'Duffel' + str(self.countDuffel)
+		self.allDuffelNames.append(name)
+		if self.zoom:	
+			self.allIconPlanes[name] = self.minimapScene.addPixmap(makeTransparentPlane(self));
+			pm = self.allIconPlanes[name].pixmap()
+			painter = QPainter(pm); 
+			pen = QPen(QColor(255,0,0,255)); 
+			pen.setWidth(2); 
+			painter.setPen(pen); 
+			polygon = QPolygon()
+			points = [x-5,y+5, x+17, y+20, x+5, y, x, y+20, x+20,y+5]
+			polygon.setPoints(points)
+			painter.drawPolygon(polygon)
+			painter.end()
+			self.allIconPlanes[name].setPixmap(pm); 
+			self.countDuffel = self.countDuffel +1
 
 	def make_connections(self): 
+		#Handler for final sketches
+		self.sketch.connect(self.sketch_client)
+		self.cameraSketch.connect(self.cameraSketchClient)
+		self.rightClick.connect(self.rightClickClient)
 		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 
@@ -679,9 +714,7 @@ class SimulationWindow(QWidget):
 		#Zoom
 		self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
 
-		#Handler for final sketches
-		self.sketch.connect(self.sketch_client)
-		self.cameraSketch.connect(self.cameraSketchClient)
+
 
 		#Handlers for sliders
 		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 
@@ -769,7 +802,7 @@ def main():
 		coretools_app = SimulationWindow()
 		signal.signal(signal.SIGINT, lambda *a: app.quit())
 		app.startTimer(200)
-
+		coretools_app.cameraSketch.emit()
 		sys.exit(app.exec_())
 
 

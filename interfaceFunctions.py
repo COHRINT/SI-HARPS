@@ -526,7 +526,7 @@ def drawIcons(wind, name,centx,centy,x,y):
 	#wind.zoomSketchLabels[name] = [centx,centy]; 
 	wind.rel_x = point.x()/wind.res + x*wind.minimapScene.width()/wind.res
 	wind.rel_y = point.y()/wind.res + y*wind.minimapScene.height()/wind.res
-	radius = 1
+	radius = 5
 	#for name in wind.zoomSketchLabels.keys():
 		#planeFlushPaint(wind.allIconPlanes[name])
 
@@ -540,20 +540,32 @@ def drawIcons(wind, name,centx,centy,x,y):
 	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
-	wins.iconPLane.setZValue(1)
+
 
 def drawCameras(wind,item):
+	
 	pm = wind.allIconPlanes[item].pixmap()
 	pic = QImage('camera.png')
 	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
 	pen = QPen(QColor(255,0,0,255)); 
-	pen.setWidth(10); 
+	pen.setWidth(1); 
 	painter.setPen(pen); 
 	painter.rotate(wind.cameras[item]['orientation'])
 	#painter.translate(wind.cameras[item]['x'],wind.cameras[item]['y'])
 	painter.drawText(wind.cameras[item]['x']+23,wind.cameras[item]['y']+35,str(item)); 
 	painter.drawImage(wind.cameras[item]['x'],wind.cameras[item]['y'], pic,0,0,61,60);
-
+	#polygon = QPolygon()
+	#points = [wind.cameras[item]['x']-5,wind.cameras[item]['y']+5, wind.cameras[item]['x']+17, wind.cameras[item]['y']+20, wind.cameras[item]['x']+5, wind.cameras[item]['y'], wind.cameras[item]['x'], wind.cameras[item]['y']+20, \
+	#wind.cameras[item]['x']+20, wind.cameras[item]['y']+5]
+	#polygon.setPoints(points)
+	#painter.drawPolygon(polygon)
 	painter.end()
 	wind.allIconPlanes[item].setPixmap(pm); 
+
+
+
+	'''polygon = QPolygon()
+	points = [wind.cameras[item]['x'],wind.cameras[item]['y'], wind.cameras[item]['x']+30, wind.cameras[item]['y']+15, wind.cameras[item]['x'], wind.cameras[item]['y']+30]
+	polygon.setPoints(points)
+	painter.drawPolygon(polygon)'''
