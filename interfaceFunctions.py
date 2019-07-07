@@ -520,6 +520,9 @@ def zoomIn(wind,x,y):
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
+	for name in wind.allDuffelNames:
+		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
+			drawDuffels(wind,name,wind.zoomCentx[name],wind.zoomCenty[name])
 
 def drawIcons(wind, name,centx,centy,x,y):
 	point = wind.minimapView.mapToScene(centx,centy)
@@ -569,3 +572,34 @@ def drawCameras(wind,item):
 	points = [wind.cameras[item]['x'],wind.cameras[item]['y'], wind.cameras[item]['x']+30, wind.cameras[item]['y']+15, wind.cameras[item]['x'], wind.cameras[item]['y']+30]
 	polygon.setPoints(points)
 	painter.drawPolygon(polygon)'''
+
+
+def drawDuffels(wind,name,x,y):
+	pm = wind.allIconPlanes[name].pixmap()
+	painter = QPainter(pm); 
+	pen = QPen(QColor(255,0,0,255)); 
+	pen.setWidth(2); 
+	painter.setPen(pen); 
+	polygon = QPolygon()
+	points = [x-5,y+5, x+17, y+20, x+5, y, x, y+20, x+20,y+5]
+	polygon.setPoints(points)
+	painter.drawPolygon(polygon)
+	painter.end()
+	wind.allIconPlanes[name].setPixmap(pm); 
+
+def findTile(wind,pointX,pointY):
+	x = int(pointX/wind.minimapScene.width()*wind.res)
+	y = int(pointY/wind.minimapScene.height()*wind.res)
+	return x,y
+
+
+
+
+
+
+
+
+
+
+
+

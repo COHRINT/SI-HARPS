@@ -170,8 +170,7 @@ def imageMouseScroll(QwheelEvent,wind):
 	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
 	point = wind.minimapView.mapToScene(tmp[0],tmp[1])
-	x = int(point.x()/wind.minimapScene.width()*wind.res)
-	y = int(point.y()/wind.minimapScene.height()*wind.res)
+	x,y = findTile(wind,point.x(),point.y())
 
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
@@ -190,7 +189,6 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allIconPlanes[name])
 		for item in wind.cameras:
 			planeFlushPaint(wind.allIconPlanes[item])
-
 
 		wind.single = False
 
@@ -653,6 +651,7 @@ class SimulationWindow(QWidget):
 			else:
 				#If the name is not new just remove the temporary stuff
 				planeFlushPaint(self.allSketchPlanes[''],[]);
+
 				self.allSketchPlanes.pop('')
 				self.allSketches.pop('')
 			#Redraw regardless
@@ -671,7 +670,12 @@ class SimulationWindow(QWidget):
 			if self.zoom and self.zoomSketchLabels:
 				self.zoomSketchLabels.pop('')
 			else:
-				self.sketchLabels.pop('')
+				try:
+					self.sketchLabels.pop('')
+				except:
+					print("Convex hull catch")
+		print self.allSketches
+		#redrawSketches(self)
 
 	def cameraSketchClient(self):
 		with open("camera.yaml", 'r') as fp:
@@ -685,17 +689,12 @@ class SimulationWindow(QWidget):
 		self.allDuffelNames.append(name)
 		if self.zoom:	
 			self.allIconPlanes[name] = self.minimapScene.addPixmap(makeTransparentPlane(self));
-			pm = self.allIconPlanes[name].pixmap()
-			painter = QPainter(pm); 
-			pen = QPen(QColor(255,0,0,255)); 
-			pen.setWidth(2); 
-			painter.setPen(pen); 
-			polygon = QPolygon()
-			points = [x-5,y+5, x+17, y+20, x+5, y, x, y+20, x+20,y+5]
-			polygon.setPoints(points)
-			painter.drawPolygon(polygon)
-			painter.end()
-			self.allIconPlanes[name].setPixmap(pm); 
+			tileX,tileY = findTile(self,x,y)
+			self.allSketchX[name] = tileX
+			self.allSketchY[name] = tileY
+			self.zoomCentx[name] = x
+			self.zoomCenty[name] = y
+			drawDuffels(self,name,x,y)
 			self.countDuffel = self.countDuffel +1
 
 	def make_connections(self): 
