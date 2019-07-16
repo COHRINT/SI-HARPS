@@ -171,7 +171,6 @@ def imageMouseScroll(QwheelEvent,wind):
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
 	point = wind.minimapView.mapToScene(tmp[0],tmp[1])
 	x,y = findTile(wind,point.x(),point.y())
-
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
@@ -316,8 +315,8 @@ class SimulationWindow(QWidget):
 		#self.show();
 
 		self.zoom = False
-
 		#self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
+		self.duffel_pub = rospy.Publisher('/duffel', duffel, queue_size=10)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
@@ -668,13 +667,16 @@ class SimulationWindow(QWidget):
 			self.allSketchPlanes.pop('')
 			self.allSketches.pop('')
 			if self.zoom and self.zoomSketchLabels:
-				self.zoomSketchLabels.pop('')
+				try:
+					self.zoomSketchLabels.pop('')
+				except:
+					print("Convex zoom hull catch")
 			else:
 				try:
 					self.sketchLabels.pop('')
 				except:
 					print("Convex hull catch")
-		print self.allSketches
+
 		#redrawSketches(self)
 
 	def cameraSketchClient(self):
@@ -685,17 +687,26 @@ class SimulationWindow(QWidget):
 			drawCameras(self,item)
 
 	def rightClickClient(self,x,y):
-		name = 'Duffel' + str(self.countDuffel)
-		self.allDuffelNames.append(name)
+		msg = duffel()
 		if self.zoom:	
+			name = 'Duffel' + str(self.countDuffel)
+			self.allDuffelNames.append(name)
 			self.allIconPlanes[name] = self.minimapScene.addPixmap(makeTransparentPlane(self));
-			tileX,tileY = findTile(self,x,y)
-			self.allSketchX[name] = tileX
-			self.allSketchY[name] = tileY
+
+			self.allSketchX[name] = self.locationX
+			self.allSketchY[name] = self.locationY
 			self.zoomCentx[name] = x
 			self.zoomCenty[name] = y
 			drawDuffels(self,name,x,y)
 			self.countDuffel = self.countDuffel +1
+
+			abs_x,abs_y = relToAbsolute(self,x,y)
+			msg.x = abs_x #x,y probably should be in absolute frame
+			msg.tilex = self.locationX
+			msg.tiley = self.locationY
+			msg.y = abs_y
+			msg.name = name
+			self.duffel_pub.publish(msg)
 
 	def make_connections(self): 
 		#Handler for final sketches

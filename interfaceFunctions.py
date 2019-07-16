@@ -516,12 +516,15 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.pic[i][j])
 		wind.minimapScene.addItem(wind.pic[x][y])
 		wind.pic[x][y].setPos(0,0)
-
+		print x,y
+		print wind.allSketchX
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
 	for name in wind.allDuffelNames:
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
+			print x,y
+			print wind.allSketchX[name], wind.allSketchY[name]
 			drawDuffels(wind,name,wind.zoomCentx[name],wind.zoomCenty[name])
 
 def drawIcons(wind, name,centx,centy,x,y):
@@ -554,10 +557,13 @@ def drawCameras(wind,item):
 	pen = QPen(QColor(255,0,0,255)); 
 	pen.setWidth(1); 
 	painter.setPen(pen); 
+	painter.translate(wind.cameras[item]['x'],wind.cameras[item]['y'])
 	painter.rotate(wind.cameras[item]['orientation'])
-	#painter.translate(wind.cameras[item]['x'],wind.cameras[item]['y'])
+	painter.translate(-wind.cameras[item]['x'],-wind.cameras[item]['y'])
 	painter.drawText(wind.cameras[item]['x']+23,wind.cameras[item]['y']+35,str(item)); 
 	painter.drawImage(wind.cameras[item]['x'],wind.cameras[item]['y'], pic,0,0,61,60);
+
+
 	#polygon = QPolygon()
 	#points = [wind.cameras[item]['x']-5,wind.cameras[item]['y']+5, wind.cameras[item]['x']+17, wind.cameras[item]['y']+20, wind.cameras[item]['x']+5, wind.cameras[item]['y'], wind.cameras[item]['x'], wind.cameras[item]['y']+20, \
 	#wind.cameras[item]['x']+20, wind.cameras[item]['y']+5]
@@ -587,16 +593,17 @@ def drawDuffels(wind,name,x,y):
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
 
-def findTile(wind,pointX,pointY):
+def findTile(wind,pointX,pointY): #wrong, it is doing the thing where it thinks its absolute
 	x = int(pointX/wind.minimapScene.width()*wind.res)
 	y = int(pointY/wind.minimapScene.height()*wind.res)
 	return x,y
 
 
 
-
-
-
+def relToAbsolute(wind,rel_x,rel_y):
+	abs_x = rel_x/wind.res + wind.locationX*wind.minimapScene.width()/wind.res
+	abs_y = rel_y/wind.res + wind.locationY*wind.minimapScene.height()/wind.res
+	return abs_x,abs_y
 
 
 
