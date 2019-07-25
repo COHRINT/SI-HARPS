@@ -57,6 +57,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    sketch.msg
+   RobotState.msg
    duffel.msg
    push.msg
    pull.msg

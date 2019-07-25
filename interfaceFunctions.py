@@ -581,6 +581,10 @@ def drawCameras(wind,item):
 	painter.drawPolygon(polygon)'''
 
 
+
+
+
+
 def drawDuffels(wind,name,x,y):
 	pm = wind.allIconPlanes[name].pixmap()
 	painter = QPainter(pm); 

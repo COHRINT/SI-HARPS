@@ -30,6 +30,7 @@ from harps_interface.msg import *
 # For viewing the image topic
 
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Pose
 from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -270,6 +271,7 @@ class SimulationWindow(QWidget):
 	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
 	rightClick = pyqtSignal(int,int)
+	state = pyqtSignal(str,int,int,int)
 
 	def __init__(self):
 
@@ -337,7 +339,7 @@ class SimulationWindow(QWidget):
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
-		#self.state_sub = rospy.Subscriber('state', RobotState, self.state_callback)
+		self.state_sub = rospy.Subscriber('noise', Pose, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
@@ -389,6 +391,7 @@ class SimulationWindow(QWidget):
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
 		self.topLayer = self.minimapScene.addPixmap(self.pix); 
+
 
 
 		self.minimapView.setScene(self.minimapScene); 
@@ -723,17 +726,47 @@ class SimulationWindow(QWidget):
 
 			abs_x,abs_y = relToAbsolute(self,x,y)
 			msg.x = abs_x #x,y probably should be in absolute frame
-			msg.tilex = self.locationX
-			msg.tiley = self.locationY
+			msg.tile_x = self.locationX
+			msg.tile_y = self.locationY
 			msg.y = abs_y
 			msg.name = name
 			self.duffel_pub.publish(msg)
+
+	def state_callback(self,data): #make it emit a signal or 2
+		x = data.position.x
+		y = data.position.y
+		direction = 0
+		#defog(self,x,y,self.locationX,self.locationY)
+		self.state.emit('drone',x,y,direction)
+
+	def drawDrone(self,item,x,y,dir):
+		if 'drone' not in self.allIconPlanes.keys():
+			#Drone
+			self.allIconPlanes['drone'] = self.minimapScene.addPixmap(makeTransparentPlane(self));
+
+			pm = self.allIconPlanes[item].pixmap()
+			painter = QPainter(pm)
+			pen = QPen(QColor(255,0,0,255)); 
+			pen.setWidth(1); 
+			painter.setPen(pen); 
+
+			polygon = QPolygon()
+			points = [x,y,x+30, y+15,x,y+30]
+			polygon.setPoints(points)
+			painter.drawPolygon(polygon)
+
+			painter.end()
+			self.allIconPlanes[item].setPixmap(pm); 
+		else:
+			self.allIconPlanes['drone'].setPos(QPointF(x,y))
+			#self.allIconPlanes['drone'].setRotation()
 
 	def make_connections(self): 
 		#Handler for final sketches
 		self.sketch.connect(self.sketch_client)
 		self.cameraSketch.connect(self.cameraSketchClient)
 		self.rightClick.connect(self.rightClickClient)
+		self.state.connect(self.drawDrone)
 		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 
