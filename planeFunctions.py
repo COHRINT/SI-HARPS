@@ -25,6 +25,7 @@ from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
 import numpy as np
 
+
 from shapely.geometry import Polygon,Point
 import shapely
 
@@ -34,18 +35,22 @@ def makeTruePlane(wind):
 	wind.trueImage = QPixmap('../img/eastCampus_2017_2.jpg'); 
 	wind.imgWidth = wind.trueImage.size().width(); 
 	wind.imgHeight = wind.trueImage.size().height(); 
-
 	wind.truePlane = wind.imageScene.addPixmap(wind.trueImage); 
 
 
-def makeFogPlane(wind):
-	fI = QPixmap('../img/eastCampus_1999_2.jpg')
-	wind.fogImage = QImage(wind.imgWidth,wind.imgHeight,QtGui.QImage.Format_ARGB32);
-	paintMask = QPainter(wind.fogImage);  
-	paintMask.drawPixmap(0,0,fI);
-	paintMask.end();
+def makeFogPlane(wind,image):
+	scale = QPixmap('overhead.png')
+	testMap = QPixmap(scale.size().width(),scale.size().height()); 
+	testMap.fill(QColor(0,0,0,70)); 
+	#wind.fogImage = QImage(fI.size().width(),fI.size().height(),QtGui.QImage.Format_ARGB32);
+	#paintMask = QPainter(image);  
+	#paintMask.fillRect(QRect(0, 0, image.width(), image.height()),QBrush(QColor(0,0,0,70)))
+	#paintMask.drawPixmap(0,0,fI);
 
-	wind.fogPlane = wind.imageScene.addPixmap(QPixmap.fromImage(wind.fogImage)); 
+	wind.fogPlane = wind.minimapScene.addPixmap(testMap); 
+	#paintMask.end()
+
+	return wind.fogPlane.pixmap()
 
 
 def makeTransparentPlane(wind):
@@ -55,13 +60,34 @@ def makeTransparentPlane(wind):
 	testMap.fill(QtCore.Qt.transparent); 
 	return testMap; 
 
-def defog(wind,points):
+def absToRelative(wind,abs_x,abs_y):
+	rel_x = (abs_x/wind.res)
+	rel_y = (abs_y/wind.res)
+
+	return rel_x,rel_y
+
+def defog(wind,points,x,y): #call from callback -> <>
+	tile = wind.fogArray[x][y].pixmap().toImage()
+	#painter = QPainter(tile)
+	#brush = QPen(QColor(0,0,100,0))
 
 	for p in points:
-		wind.fogImage.setPixelColor(p[0],p[1],QColor(0,0,0,0)); 
+		rel_x,rel_y = absToRelative(wind,p[0],p[1])
+		tile.setPixel(rel_x,rel_y,qRgba(0,0,0,0))
+	#	painter.drawPoint(p[0],p[1])
 
-	wind.fogPlane.setPixmap(QPixmap.fromImage(wind.fogImage));
 
+	#scale = QPixmap('overhead.png')
+	#testMap = QPixmap(scale.size().width(),scale.size().height()); 
+	#testMap.fill(QColor(0,50,0,0)); 
+	#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
+	wind.fogArray[x][y] = QGraphicsPixmapItem(QPixmap.fromImage(tile))
+
+	#reTile(wind,wind.fogArray)
+def refresh(wind,x,y):
+	wind.minimapScene.removeItem(wind.fogArray[x][y])
+	wind.minimapScene.addItem(wind.fogArray[x][y])
+	wind.fogArray[x][y].setScale(wind.res)
 def planeAddPaint(planeWidget,points=[],col=None,pen=None):
 
 	pm = planeWidget.pixmap(); 
@@ -145,14 +171,19 @@ def cutImage(wind, image):
 			#map plane ------------------
 	return pixmapArray
 
-def reTile(wind,pixmapArray):
+def reTile(wind,pixmapArray,z):
 	for i in range(0,wind.res):
 		for j in range(0,wind.res):
 			pixmapArray[i][j].setPos(wind.pix.width()/wind.res*i,wind.pix.height()/wind.res*j)
 			wind.minimapScene.addItem(pixmapArray[i][j])
 			pixmapArray[i][j].setScale(1)
-			pixmapArray[i][j].setZValue(-1)
+			pixmapArray[i][j].setZValue(z)
 			#map plane ------------------
-	wind.topLayer.setZValue(-1)
-	wind.beliefLayer.setZValue(0)
 	return pixmapArray
+
+
+def organizeZ(wind):
+	wind.topLayer.setZValue(-1)
+	wind.beliefLayer.setZValue(0.5)
+	wind.iconPlane.setZValue(1)
+	#wind.fogArray[x][y].setZValue(-1)

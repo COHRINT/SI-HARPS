@@ -7,9 +7,9 @@ from PyQt5.QtCore import *;
 import sys,os
 
 from topic_tools.srv import *
-from planeFunctions import *
-from interfaceFunctions import *
 
+from interfaceFunctions import *
+from planeFunctions import *
 import numpy as np
 import time
 import yaml
@@ -151,7 +151,11 @@ def imageMouseMove(QMouseEvent,wind):
 				wind.points.append([tmp[0]+i,tmp[1]+j]); 
 
 		name = ''
+	
 		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
+	
+		if wind.zoom == True:
+			defog(wind,wind.points,wind.locationX,wind.locationY)
 
 def imageMouseRelease(QMouseEvent,wind):
 	if(wind.sketchingInProgress and wind.sketchListen):
@@ -163,6 +167,7 @@ def imageMouseRelease(QMouseEvent,wind):
 		print ('A new sketch, hazzah!')
 		wind.sketch.emit() #emit pyqtSignal to get to self.sketch_client()
 		wind.sketchingInProgress = False;
+		#refresh(wind,wind.locationX,wind.locationY)
 
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
@@ -179,7 +184,9 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setSliderPosition(0)
 		wind.beliefOpacitySlider.setEnabled(False)
 		wind.pic[x][y].setScale(wind.res)
-		wind.topLayer.setZValue(-1)
+		wind.fogArray[x][y].setScale(wind.res)
+		wind.iconPlane.setZValue(5)
+		wind.topLayer.setZValue(-5)
 		wind.locationX = x
 		wind.locationY = y
 		for name in wind.sketchLabels.keys():
@@ -197,10 +204,17 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setEnabled(True)
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
 		wind.minimapScene.removeItem(wind.pic[x][y])
-		reTile(wind,wind.pic)
-		redrawSketches(wind)
+		wind.minimapScene.removeItem(wind.fogArray[x][y])
+		reTile(wind,wind.pic,-1)
+		#organizeZ(wind)
+		
+		wind.beliefLayer.setZValue(0.5)
+		wind.iconPlane.setZValue(1)
 		wind.topLayer.setZValue(0)
-		wind.beliefLayer.setZValue(1)
+		redrawSketches(wind)
+
+		reTile(wind,wind.fogArray,1)
+
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
@@ -323,6 +337,7 @@ class SimulationWindow(QWidget):
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
+		#self.state_sub = rospy.Subscriber('state', RobotState, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
@@ -358,6 +373,8 @@ class SimulationWindow(QWidget):
 		self.sketchPlane = makeTransparentPlane(self);
 		#make iconPlane --------------------
 		self.iconPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
+		#make fogPlane
+		#self.fogPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
 		self.pix = QPixmap('less_oldFlyoverton.png'); 
 		self.belief = QPixmap('less_oldBelief.png')
@@ -371,13 +388,17 @@ class SimulationWindow(QWidget):
 
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
-		self.beliefLayer.setZValue(1) 
 		self.topLayer = self.minimapScene.addPixmap(self.pix); 
-		self.topLayer.setZValue(-1)
+
 
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
 		self.layout.addWidget(self.minimapView,1,1,14,13);
+
+		#Fog
+		self.pixDark = makeFogPlane(self,self.pix)
+		self.fogArray = cutImage(self,self.pixDark)
+		organizeZ(self)
 
 		#Tabbed Camerafeeds ----------------------
 
@@ -806,6 +827,37 @@ class SimulationWindow(QWidget):
 		elif self.currentCamTab is 4:
 			self.cameraFeed5.setPixmap(QPixmap(self.image))
 		# self.image.setZValue(4)
+'''
+	def state_callback(self, data):
+                
+                self.lastStateMsg = data
+		self._robotFuel = data.fuel
+		self.worldX = data.pose.position.x
+		self.worldY = data.pose.position.y
+		worldRoll, worldPitch, self.worldYaw = euler_from_quaternion([data.pose.orientation.x,
+										  data.pose.orientation.y,
+										  data.pose.orientation.z,
+										  data.pose.orientation.w],'sxyz')
+
+
+		self.location_update.emit(self.worldX, self.worldY, self.worldYaw, self._robotFuel)
+
+		if(self.isGoal == True):
+			if math.sqrt(pow((self.goalx - self.worldX),2) + pow((self.goaly - self.worldY),2)) < 25: #25 is the number of meters for goal transition
+					self.msg.goal_id = self.table.item(self.table.currentRow(),0).text()
+					self.msg.fuel = self._robotFuel
+					self.msg.header.stamp = rospy.Time.now()
+					self.pub.publish(self.msg)
+					self.goal_reached.emit()
+					self.choose_goal()
+					self.teleportNeeded = False
+                #May need a timeout here to prevent the system from cycling
+                if data.needTeleport:
+                        self.lblTeleport.setVisible(True)
+                        self.teleportNeeded = True
+                else:
+                        self.lblTeleport.setVisible(False)
+'''
 
 def main():
 		app = QApplication(sys.argv)

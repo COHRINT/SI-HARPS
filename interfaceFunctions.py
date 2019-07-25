@@ -235,14 +235,13 @@ def updateModels(wind,name, vertNum, pub,zoom):
 
 		for i in range(0, len(vertices)):
 			print(i)
-			#if wind.zoom:
-			#	msg.points[i].x = vertices[i][0]/wind.res + x*wind.minimapScene.width()/wind.res
-			#	msg.points[i].y = vertices[i][1]/wind.res + y*wind.minimapScene.height()/wind.res
-			#	msg.points[i].z = 0
-			#else:
-			msg.points[i].x = vertices[i][0]
-			msg.points[i].y = vertices[i][1]
-			msg.points[i].z = 0
+			if wind.zoom:
+				msg.points[i].x,msg.points[i].y = relToAbsolute(wind,vertices[i][0],vertices[i][1])
+				msg.points[i].z = 0
+			else:
+				msg.points[i].x = vertices[i][0]
+				msg.points[i].y = vertices[i][1]
+				msg.points[i].z = 0
 
 
 		msg.name = name
@@ -506,7 +505,7 @@ def makeBeliefMap(wind):
 	pm = im
 	#pm = pm.scaled(wind.imgWidth,wind.imgHeight);
 	scale = float(wind.beliefOpacitySlider.sliderPosition())/100
-	paintPixToPix(wind.beliefLayer,pm,scale);   
+	paintPixToPix(wind.beliefLayer,pm,scale)
 
 
 def zoomIn(wind,x,y):
@@ -514,17 +513,19 @@ def zoomIn(wind,x,y):
 		for i in range(0,wind.res):
 			for j in range(0,wind.res):
 				wind.minimapScene.removeItem(wind.pic[i][j])
+				wind.minimapScene.removeItem(wind.fogArray[i][j])
 		wind.minimapScene.addItem(wind.pic[x][y])
+		wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.pic[x][y].setPos(0,0)
-		print x,y
-		print wind.allSketchX
+		wind.fogArray[x][y].setPos(0,0)
+		wind.fogArray[x][y].setZValue(0)
+
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
+			wind.allSketchPlanes[name].setZValue(1)
 	for name in wind.allDuffelNames:
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
-			print x,y
-			print wind.allSketchX[name], wind.allSketchY[name]
 			drawDuffels(wind,name,wind.zoomCentx[name],wind.zoomCenty[name])
 
 def drawIcons(wind, name,centx,centy,x,y):
@@ -592,6 +593,7 @@ def drawDuffels(wind,name,x,y):
 	painter.drawPolygon(polygon)
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
+	wind.allIconPlanes[name].setZValue(1)
 
 def findTile(wind,pointX,pointY): #wrong, it is doing the thing where it thinks its absolute
 	x = int(pointX/wind.minimapScene.width()*wind.res)
@@ -604,9 +606,4 @@ def relToAbsolute(wind,rel_x,rel_y):
 	abs_x = rel_x/wind.res + wind.locationX*wind.minimapScene.width()/wind.res
 	abs_y = rel_y/wind.res + wind.locationY*wind.minimapScene.height()/wind.res
 	return abs_x,abs_y
-
-
-
-
-
 
