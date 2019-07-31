@@ -14,9 +14,12 @@ import numpy as np
 import time
 import yaml
 import rospy
+import QArrow
 import struct
 import array
 import cv2
+import tf
+from tf.transformations import *
 import math
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -30,7 +33,7 @@ from harps_interface.msg import *
 # For viewing the image topic
 
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -128,7 +131,7 @@ def imageMousePress(QMouseEvent,wind):
 		wind.rightClick.emit(tmp[0],tmp[1])
 		wind.sketchListen=False;
 
- 	#print(tmp); 
+	print(tmp); 
 	if(wind.sketchListen):
 		wind.allSketchPaths.append([]); 
 		#wind.sketchingInProgress = True
@@ -155,8 +158,8 @@ def imageMouseMove(QMouseEvent,wind):
 	
 		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
 	
-		if wind.zoom == True:
-			defog(wind,wind.points,wind.locationX,wind.locationY)
+		#if wind.zoom == True:
+		#	defog(wind,wind.points,wind.locationX,wind.locationY)
 
 def imageMouseRelease(QMouseEvent,wind):
 	if(wind.sketchingInProgress and wind.sketchListen):
@@ -177,9 +180,10 @@ def imageMouseScroll(QwheelEvent,wind):
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
 	point = wind.minimapView.mapToScene(tmp[0],tmp[1])
 	x,y = findTile(wind,point.x(),point.y())
+	wind.locationX = x
+	wind.locationY = y
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
-		wind.zoom = True
 		if wind.single == True:
 			wind.sliderTmp = wind.beliefOpacitySlider.value()
 		wind.beliefOpacitySlider.setSliderPosition(0)
@@ -188,8 +192,6 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.fogArray[x][y].setScale(wind.res)
 		wind.iconPlane.setZValue(5)
 		wind.topLayer.setZValue(-5)
-		wind.locationX = x
-		wind.locationY = y
 		for name in wind.sketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 		for name in wind.zoomSketchLabels.keys():
@@ -223,9 +225,11 @@ def imageMouseScroll(QwheelEvent,wind):
 			drawCameras(wind,item)
 		for name in wind.allDuffelNames:
 			planeFlushPaint(wind.allIconPlanes[name])
-
-
-
+	#	planeFlushPaint(wind.allIconPlanes['drone'])
+		
+		wind.state.emit(wind.drone_x,wind.drone_y)
+		wind.minimapScene.addItem(wind.robotIcon)
+		print wind.drone_x, wind.drone_y
 def redrawSketches(wind):
 	print("redraw")
 	#print("Redrawing
@@ -268,10 +272,11 @@ def pullIDKPressed(wind):
 
 class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
+	defogSignal = pyqtSignal(int, int, int, int, list)
 	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
 	rightClick = pyqtSignal(int,int)
-	state = pyqtSignal(str,int,int,int)
+	state = pyqtSignal(int,int)
 
 	def __init__(self):
 
@@ -330,7 +335,6 @@ class SimulationWindow(QWidget):
 		self.rel_y = 0
 		#self.show();
 
-		self.zoom = False
 		#self.new_image = rospy.Subscriber("/Camera1/image_raw", Image, self.EmitSetDroneImage)
 		self.duffel_pub = rospy.Publisher('/duffel', duffel, queue_size=10)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
@@ -339,7 +343,7 @@ class SimulationWindow(QWidget):
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
-		self.state_sub = rospy.Subscriber('noise', Pose, self.state_callback)
+		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 
 		rospy.init_node('camera_view_client1')
@@ -552,7 +556,7 @@ class SimulationWindow(QWidget):
 
 		self.layout.addWidget(pullBox,12,16,2,14)
 
-
+		print self.minimapScene.width(), self.minimapScene.height()
 		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
 		self.beliefOpacitySlider = QSlider(Qt.Horizontal); 
@@ -601,7 +605,11 @@ class SimulationWindow(QWidget):
 
 		timer = QTimer(self)
 		timer.timeout.connect(self.generateInput)
-   		timer.start(self.out['duration'])
+		timer.start(self.out['duration'])
+
+
+		self.thisRobot = QArrow.QArrow(color=QColor(255,0,0,255))
+		self.minimapScene.addItem(self.thisRobot);
 
 		self.layout.addLayout(sliderLayout,15,1,2,14) 
 
@@ -632,12 +640,12 @@ class SimulationWindow(QWidget):
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
 		self.npcBox.setStyleSheet("border: 4px solid red")
-   		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' \
-   			+ np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
-   		self.npcBox.update()
+		self.npcBox.setText(np.random.choice(self.out['Names']) + ' ' + np.random.choice(self.out['Certainty']) + ' ' + np.random.choice(self.out['Subject']) + ' ' \
+			+ np.random.choice(self.out['Proximity']) + ' ' + np.random.choice(self.out['Location']))
+		self.npcBox.update()
 
-   		timer2 = QTimer(self)
-   		timer2.setSingleShot(True)
+		timer2 = QTimer(self)
+		timer2.setSingleShot(True)
 		timer2.timeout.connect(self.flash)
 		timer2.start(self.out['flash'])
 
@@ -700,7 +708,6 @@ class SimulationWindow(QWidget):
 					self.sketchLabels.pop('')
 				except:
 					print("Convex hull catch")
-
 		#redrawSketches(self)
 
 	def cameraSketchClient(self):
@@ -732,34 +739,85 @@ class SimulationWindow(QWidget):
 			msg.name = name
 			self.duffel_pub.publish(msg)
 
-	def state_callback(self,data): #make it emit a signal or 2
-		x = data.position.x
-		y = data.position.y
-		direction = 0
-		#defog(self,x,y,self.locationX,self.locationY)
-		self.state.emit('drone',x,y,direction)
+	def state_callback(self,data): #make it emit a signal or 
+		self.drone_x = data.pose.position.x
+		self.drone_y = data.pose.position.y
+		worldRoll, worldPitch, self.worldYaw = euler_from_quaternion([data.pose.orientation.x,
+                                                                 data.pose.orientation.y,
+                                                                 data.pose.orientation.z,
+                                                                 data.pose.orientation.w])
+		
+		#if self.zoom:
+		#	self.defogSignal.emit(self.drone_x,self.drone_y,self.locationX,self.locationY, self.fogArray)
 
-	def drawDrone(self,item,x,y,dir):
-		if 'drone' not in self.allIconPlanes.keys():
-			#Drone
-			self.allIconPlanes['drone'] = self.minimapScene.addPixmap(makeTransparentPlane(self));
 
-			pm = self.allIconPlanes[item].pixmap()
-			painter = QPainter(pm)
-			pen = QPen(QColor(255,0,0,255)); 
-			pen.setWidth(1); 
-			painter.setPen(pen); 
+		self.state.emit(self.drone_x,self.drone_y)
 
-			polygon = QPolygon()
-			points = [x,y,x+30, y+15,x,y+30]
-			polygon.setPoints(points)
-			painter.drawPolygon(polygon)
 
-			painter.end()
-			self.allIconPlanes[item].setPixmap(pm); 
-		else:
-			self.allIconPlanes['drone'].setPos(QPointF(x,y))
-			#self.allIconPlanes['drone'].setRotation()
+	def drawDrone(self,x,y):
+		#Drone
+		'''self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
+
+		pm = self.allIconPlanes[item].pixmap()
+		painter = QPainter(pm)
+		painter.translate(x,y)
+		painter.rotate(direc)
+
+		pen = QPen(QColor(255,0,0,255)); 
+		pen.setWidth(2); 
+		painter.setPen(pen); 
+		polygon = QPolygon()
+		points = [0,0,30, 15,0,30,10,15]
+		polygon.setPoints(points)
+		painter.drawPolygon(polygon)
+
+			#painter.rotate(direc)
+			#painter.translate(-x,-y)
+		painter.end()
+			
+		self.allIconPlanes[item].setPixmap(pm); 
+		'''#self.allIconPlanes[item].setTransformOriginPoint(QPointF(0,0))
+		#self.allIconPlanes[item].setTransformOriginPoint(QPointF(x+15,y+15))
+		#self.allIconPlanes[item].setRotation(direc)
+		
+		#self.allIconPlanes[item].setPos(QPointF(x,y))
+		#self.allIconPlanes[item].setTransformOriginPoint(QPointF(x+15,y+15))
+		#self.allIconPlanes[item].setRotation(direc)
+		'''self.allIconPlanes[item].setTransformOriginPoint(QPointF(0,0))'''
+		self.robotIcon = self.thisRobot
+		self.robotIcon.setScale(0.5)
+		iconBounds = self.robotIcon.boundingRect()
+
+		x = x*(984.0/4000.0) - iconBounds.width()/2 #meters to pixels
+		y = y*(904.0/4000.0) - iconBounds.height()/2
+		if self.zoom:
+			#wind.zoomSketchLabels[name] = [centx,centy]; 
+			x = x + iconBounds.width()/2
+			y = y + iconBounds.height()/2
+			x,y = absToRelative(self,x,y)
+
+		self.robotIcon.setTransformOriginPoint(QPoint(iconBounds.width()/2, iconBounds.height()/2))
+		self.robotIcon.setPos(QPoint(x,y))
+		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
+
+
+
+	def defog(self,pointX,pointY,x,y,obj): #call from callback -> <>
+		tile = obj[x][y].pixmap().toImage()
+		#painter = QPainter(tile)
+		#brush = QPen(QColor(0,0,100,0))
+
+		rel_x,rel_y = absToRelative(self,pointX,pointY)
+		tile.setPixel(rel_x,rel_y,qRgba(0,0,0,0))
+		#	painter.drawPoint(p[0],p[1])
+
+
+		#scale = QPixmap('overhead.png')
+		#testMap = QPixmap(scale.size().width(),scale.size().height()); 
+		#testMap.fill(QColor(0,50,0,0)); 
+		#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
+		obj[x][y] = QGraphicsPixmapItem(QPixmap.fromImage(tile))
+
 
 	def make_connections(self): 
 		#Handler for final sketches
@@ -767,6 +825,7 @@ class SimulationWindow(QWidget):
 		self.cameraSketch.connect(self.cameraSketchClient)
 		self.rightClick.connect(self.rightClickClient)
 		self.state.connect(self.drawDrone)
+		self.defogSignal.connect(self.defog)
 		#To be created handler for clicking other tabs
 		self.cameraTabs.currentChanged.connect(self.camera_switch_client)
 
@@ -862,8 +921,8 @@ class SimulationWindow(QWidget):
 		# self.image.setZValue(4)
 '''
 	def state_callback(self, data):
-                
-                self.lastStateMsg = data
+				
+				self.lastStateMsg = data
 		self._robotFuel = data.fuel
 		self.worldX = data.pose.position.x
 		self.worldY = data.pose.position.y
@@ -884,12 +943,12 @@ class SimulationWindow(QWidget):
 					self.goal_reached.emit()
 					self.choose_goal()
 					self.teleportNeeded = False
-                #May need a timeout here to prevent the system from cycling
-                if data.needTeleport:
-                        self.lblTeleport.setVisible(True)
-                        self.teleportNeeded = True
-                else:
-                        self.lblTeleport.setVisible(False)
+				#May need a timeout here to prevent the system from cycling
+				if data.needTeleport:
+						self.lblTeleport.setVisible(True)
+						self.teleportNeeded = True
+				else:
+						self.lblTeleport.setVisible(False)
 '''
 
 def main():

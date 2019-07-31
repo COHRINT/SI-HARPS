@@ -519,7 +519,18 @@ def zoomIn(wind,x,y):
 		wind.pic[x][y].setPos(0,0)
 		wind.fogArray[x][y].setPos(0,0)
 		wind.fogArray[x][y].setZValue(0)
-
+		
+		point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
+		drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
+		print drone_tile_x, drone_tile_y
+		print x,y
+		if x == drone_tile_x and drone_tile_y == y:
+			print('Drone here')
+			wind.zoom = True
+			wind.state.emit(wind.drone_x,wind.drone_y)
+			print wind.drone_x
+		else:
+			wind.minimapScene.removeItem(wind.robotIcon)
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
@@ -527,6 +538,8 @@ def zoomIn(wind,x,y):
 	for name in wind.allDuffelNames:
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			drawDuffels(wind,name,wind.zoomCentx[name],wind.zoomCenty[name])
+
+
 
 def drawIcons(wind, name,centx,centy,x,y):
 	point = wind.minimapView.mapToScene(centx,centy)

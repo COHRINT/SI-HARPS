@@ -61,27 +61,10 @@ def makeTransparentPlane(wind):
 	return testMap; 
 
 def absToRelative(wind,abs_x,abs_y):
-	rel_x = (abs_x/wind.res)
-	rel_y = (abs_y/wind.res)
-
+	rel_x = (abs_x - wind.locationX*wind.minimapScene.width()/wind.res)*wind.res
+	rel_y = (abs_y - wind.locationY*wind.minimapScene.height()/wind.res)*wind.res
 	return rel_x,rel_y
 
-def defog(wind,points,x,y): #call from callback -> <>
-	tile = wind.fogArray[x][y].pixmap().toImage()
-	#painter = QPainter(tile)
-	#brush = QPen(QColor(0,0,100,0))
-
-	for p in points:
-		rel_x,rel_y = absToRelative(wind,p[0],p[1])
-		tile.setPixel(rel_x,rel_y,qRgba(0,0,0,0))
-	#	painter.drawPoint(p[0],p[1])
-
-
-	#scale = QPixmap('overhead.png')
-	#testMap = QPixmap(scale.size().width(),scale.size().height()); 
-	#testMap.fill(QColor(0,50,0,0)); 
-	#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
-	wind.fogArray[x][y] = QGraphicsPixmapItem(QPixmap.fromImage(tile))
 
 	#reTile(wind,wind.fogArray)
 def refresh(wind,x,y):
