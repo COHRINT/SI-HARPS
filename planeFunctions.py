@@ -38,20 +38,10 @@ def makeTruePlane(wind):
 	wind.truePlane = wind.imageScene.addPixmap(wind.trueImage); 
 
 
-def makeFogPlane(wind,image):
+def makeFogPlane(wind):
 	scale = QPixmap('overhead.png')
-	testMap = QPixmap(scale.size().width(),scale.size().height()); 
-	testMap.fill(QColor(0,0,0,70)); 
-	#wind.fogImage = QImage(fI.size().width(),fI.size().height(),QtGui.QImage.Format_ARGB32);
-	#paintMask = QPainter(image);  
-	#paintMask.fillRect(QRect(0, 0, image.width(), image.height()),QBrush(QColor(0,0,0,70)))
-	#paintMask.drawPixmap(0,0,fI);
-
-	wind.fogPlane = wind.minimapScene.addPixmap(testMap); 
-	#paintMask.end()
-
-	return wind.fogPlane.pixmap()
-
+	wind.fogPlane = QPixmap(scale.size().width(),scale.size().height()); 
+	wind.fogPlane.fill(QColor(0,0,0,0)); 
 
 def makeTransparentPlane(wind):
 	
@@ -67,10 +57,7 @@ def absToRelative(wind,abs_x,abs_y):
 
 
 	#reTile(wind,wind.fogArray)
-def refresh(wind,x,y):
-	wind.minimapScene.removeItem(wind.fogArray[x][y])
-	wind.minimapScene.addItem(wind.fogArray[x][y])
-	wind.fogArray[x][y].setScale(wind.res)
+
 def planeAddPaint(planeWidget,points=[],col=None,pen=None):
 
 	pm = planeWidget.pixmap(); 
@@ -139,7 +126,7 @@ def paintPixToPix(planeWidget,newPM,opacity):
 	painter.end(); 
 	planeWidget.setPixmap(pm); 
 
-def cutImage(wind, image):
+def cutImage(wind, image,z):
 	pixmapArray = QGraphicsPixmapItem()
 	pixmapArray = [[ 0 for x in range(0,wind.res)] for y in range(0,wind.res)]
 	wind.tileX_len=image.width()/wind.res
@@ -150,7 +137,7 @@ def cutImage(wind, image):
 			pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
 			pixmapArray[i][j].setPos(wind.tileX_len*i,wind.tileY_len*j)
 			wind.minimapScene.addItem(pixmapArray[i][j])
-			pixmapArray[i][j].setZValue(-1)
+			pixmapArray[i][j].setZValue(z)
 			#map plane ------------------
 	return pixmapArray
 

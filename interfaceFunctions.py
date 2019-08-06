@@ -514,23 +514,14 @@ def zoomIn(wind,x,y):
 			for j in range(0,wind.res):
 				wind.minimapScene.removeItem(wind.pic[i][j])
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
+
 		wind.minimapScene.addItem(wind.pic[x][y])
 		wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.pic[x][y].setPos(0,0)
 		wind.fogArray[x][y].setPos(0,0)
 		wind.fogArray[x][y].setZValue(0)
-		
-		point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
-		drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
-		print drone_tile_x, drone_tile_y
-		print x,y
-		if x == drone_tile_x and drone_tile_y == y:
-			print('Drone here')
-			wind.zoom = True
-			wind.state.emit(wind.drone_x,wind.drone_y)
-			print wind.drone_x
-		else:
-			wind.minimapScene.removeItem(wind.robotIcon)
+	
+
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
@@ -613,8 +604,8 @@ def drawDuffels(wind,name,x,y):
 	wind.allIconPlanes[name].setZValue(1)
 
 def findTile(wind,pointX,pointY): #wrong, it is doing the thing where it thinks its absolute
-	x = int(pointX/wind.minimapScene.width()*wind.res)
-	y = int(pointY/wind.minimapScene.height()*wind.res)
+	x = int(math.floor(pointX/wind.minimapScene.width()*wind.res))
+	y = int(math.floor(pointY/wind.minimapScene.height()*wind.res))
 	return x,y
 
 

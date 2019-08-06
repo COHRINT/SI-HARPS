@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import *; 
 from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
@@ -116,7 +116,7 @@ from cv_bridge import CvBridge, CvBridgeError
 # 		self.dronePixMap.emit(self.image)	
 
 def signal_handler(signal, frame):
-	print 'You pressed Ctrl+C!'
+	print ('You pressed Ctrl+C!')
 	sys.exit(0)
 		
 	signal.signal(signal.SIGINT, signal_handler)
@@ -175,6 +175,7 @@ def imageMouseRelease(QMouseEvent,wind):
 
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
+	print len(wind.minimapScene.items())
 	tmp = [(QwheelEvent.x()),(QwheelEvent.y())];
 	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
@@ -182,8 +183,23 @@ def imageMouseScroll(QwheelEvent,wind):
 	x,y = findTile(wind,point.x(),point.y())
 	wind.locationX = x
 	wind.locationY = y
+	print (x,y)
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
+		wind.zoom = True
+		try:
+			point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
+			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
+			print (point)
+			print (drone_tile_x, drone_tile_y)
+			print (x,y)
+			wind.state.emit(wind.drone_x,wind.drone_y)
+			if x == drone_tile_x and drone_tile_y == y:
+				print('Drone here')
+			else:
+				wind.minimapScene.removeItem(wind.robotIcon)
+		except:
+			print('No ROS data')
 		if wind.single == True:
 			wind.sliderTmp = wind.beliefOpacitySlider.value()
 		wind.beliefOpacitySlider.setSliderPosition(0)
@@ -200,7 +216,6 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allIconPlanes[item])
 
 		wind.single = False
-
 	if QwheelEvent.angleDelta().y() < 0:
 		wind.zoom = False
 		wind.single = True
@@ -208,6 +223,7 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
 		wind.minimapScene.removeItem(wind.pic[x][y])
 		wind.minimapScene.removeItem(wind.fogArray[x][y])
+		wind.fogArray[x][y].setScale(1)
 		reTile(wind,wind.pic,-1)
 		#organizeZ(wind)
 		
@@ -225,11 +241,13 @@ def imageMouseScroll(QwheelEvent,wind):
 			drawCameras(wind,item)
 		for name in wind.allDuffelNames:
 			planeFlushPaint(wind.allIconPlanes[name])
-	#	planeFlushPaint(wind.allIconPlanes['drone'])
-		
-		wind.state.emit(wind.drone_x,wind.drone_y)
-		wind.minimapScene.addItem(wind.robotIcon)
-		print wind.drone_x, wind.drone_y
+	#	planeFlushPaint(wind.allIconPlanes['drone']
+		try:
+			wind.state.emit(wind.drone_x,wind.drone_y)
+			wind.minimapScene.addItem(wind.robotIcon)
+			print (wind.drone_x, wind.drone_y)
+		except:
+			print('No ROS data')
 def redrawSketches(wind):
 	print("redraw")
 	#print("Redrawing
@@ -390,7 +408,7 @@ class SimulationWindow(QWidget):
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
-		self.pic = cutImage(self, self.old)
+		self.pic = cutImage(self, self.old,-1)
 
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
@@ -403,8 +421,8 @@ class SimulationWindow(QWidget):
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 		#Fog
-		self.pixDark = makeFogPlane(self,self.pix)
-		self.fogArray = cutImage(self,self.pixDark)
+		makeFogPlane(self)
+		self.fogArray = cutImage(self,self.fogPlane,1)
 		organizeZ(self)
 
 		#Tabbed Camerafeeds ----------------------
@@ -556,7 +574,6 @@ class SimulationWindow(QWidget):
 
 		self.layout.addWidget(pullBox,12,16,2,14)
 
-		print self.minimapScene.width(), self.minimapScene.height()
 		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
 		self.beliefOpacitySlider = QSlider(Qt.Horizontal); 
@@ -739,6 +756,7 @@ class SimulationWindow(QWidget):
 			msg.name = name
 			self.duffel_pub.publish(msg)
 
+
 	def state_callback(self,data): #make it emit a signal or 
 		self.drone_x = data.pose.position.x
 		self.drone_y = data.pose.position.y
@@ -747,9 +765,6 @@ class SimulationWindow(QWidget):
                                                                  data.pose.orientation.z,
                                                                  data.pose.orientation.w])
 		
-		#if self.zoom:
-		#	self.defogSignal.emit(self.drone_x,self.drone_y,self.locationX,self.locationY, self.fogArray)
-
 
 		self.state.emit(self.drone_x,self.drone_y)
 
@@ -789,7 +804,7 @@ class SimulationWindow(QWidget):
 		iconBounds = self.robotIcon.boundingRect()
 
 		x = x*(984.0/4000.0) - iconBounds.width()/2 #meters to pixels
-		y = y*(904.0/4000.0) - iconBounds.height()/2
+		y = y*(904.0/4000.0) - iconBounds.height()/2 
 		if self.zoom:
 			#wind.zoomSketchLabels[name] = [centx,centy]; 
 			x = x + iconBounds.width()/2
@@ -800,23 +815,33 @@ class SimulationWindow(QWidget):
 		self.robotIcon.setPos(QPoint(x,y))
 		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
 
+		point = self.drone_x*(984.0/4000.0),self.drone_y*(904.0/4000.0)
+		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
+		if self.zoom:
+			self.defogSignal.emit(x,y,drone_tile_x, drone_tile_y, self.fogArray)
 
 
 	def defog(self,pointX,pointY,x,y,obj): #call from callback -> <>
-		tile = obj[x][y].pixmap().toImage()
-		#painter = QPainter(tile)
-		#brush = QPen(QColor(0,0,100,0))
+		image = self.fogPlane
+		image.scaledToWidth(300)
+		tile = image.copy(QRect(image.width()/self.res*x,image.height()/self.res*y,self.tileX_len,self.tileY_len))
+		painter = QPainter(tile)
+		pen = QPen(QColor(0,0,100,100))
 
-		rel_x,rel_y = absToRelative(self,pointX,pointY)
-		tile.setPixel(rel_x,rel_y,qRgba(0,0,0,0))
-		#	painter.drawPoint(p[0],p[1])
+		#tile.setPixel(pointX/5,pointY/5,qRgba(0,0,0,190))
+		painter.drawPoint(pointX/10,pointY/10)
 
-
+		painter.end()
 		#scale = QPixmap('overhead.png')
 		#testMap = QPixmap(scale.size().width(),scale.size().height()); 
 		#testMap.fill(QColor(0,50,0,0)); 
 		#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
-		obj[x][y] = QGraphicsPixmapItem(QPixmap.fromImage(tile))
+		obj[x][y] = QGraphicsPixmapItem(tile)
+		if self.zoom:
+			self.minimapScene.removeItem(obj[x][y])
+			self.minimapScene.addItem(obj[x][y])
+			obj[x][y].setScale(self.res)
+
 
 
 	def make_connections(self): 
