@@ -40,8 +40,9 @@ def makeTruePlane(wind):
 
 def makeFogPlane(wind):
 	scale = QPixmap('overhead.png')
-	wind.fogPlane = QPixmap(scale.size().width(),scale.size().height()); 
-	wind.fogPlane.fill(QColor(0,0,0,0)); 
+	fogPlane = QPixmap(scale.size().width(),scale.size().height()); 
+	fogPlane.fill(QColor(0,0,0,100)); 
+	return fogPlane
 
 def makeTransparentPlane(wind):
 	
@@ -50,15 +51,15 @@ def makeTransparentPlane(wind):
 	testMap.fill(QtCore.Qt.transparent); 
 	return testMap; 
 
-def absToRelative(wind,abs_x,abs_y):
-	rel_x = (abs_x - wind.locationX*wind.minimapScene.width()/wind.res)*wind.res
-	rel_y = (abs_y - wind.locationY*wind.minimapScene.height()/wind.res)*wind.res
+def absToRelative(wind,abs_x,abs_y,tilex,tiley):
+	rel_x = (abs_x - tilex*wind.minimapScene.width()/wind.res)*wind.res
+	rel_y = (abs_y - tiley*wind.minimapScene.height()/wind.res)*wind.res
 	return rel_x,rel_y
 
 
 	#reTile(wind,wind.fogArray)
 
-def planeAddPaint(planeWidget,points=[],col=None,pen=None):
+def planeAddPaint(planeWidget,value,points=[],col=None,pen=None):
 
 	pm = planeWidget.pixmap(); 
 
@@ -66,7 +67,25 @@ def planeAddPaint(planeWidget,points=[],col=None,pen=None):
 
 	if(pen is None):
 		if(col is None):
-			pen = QPen(QColor(0,0,0,255)); 
+			pen = QPen(QColor(0,0,0,value)); 
+		else:
+			pen = QPen(col); 
+	painter.setPen(pen)
+	
+	for p in points:
+		painter.drawPoint(p[0],p[1]); 
+	painter.end(); 
+	planeWidget.setPixmap(pm); 
+
+def planeRemovePaint(planeWidget,value,points=[],col=None,pen=None):
+
+	pm = planeWidget.pixmap(); 
+
+	painter = QPainter(pm); 
+	painter.setCompositionMode(QtGui.QPainter.CompositionMode_Clear)
+	if(pen is None):
+		if(col is None):
+			pen = QPen(QColor(0,0,0,value)); 
 		else:
 			pen = QPen(col); 
 	painter.setPen(pen)
@@ -136,7 +155,7 @@ def cutImage(wind, image,z):
 			wind.pics = image.copy(QRect(image.width()/wind.res*i,image.height()/wind.res*j,wind.tileX_len,wind.tileY_len))
 			pixmapArray[i][j] = QGraphicsPixmapItem(wind.pics)
 			pixmapArray[i][j].setPos(wind.tileX_len*i,wind.tileY_len*j)
-			wind.minimapScene.addItem(pixmapArray[i][j])
+			#wind.minimapScene.addItem(pixmapArray[i][j])
 			pixmapArray[i][j].setZValue(z)
 			#map plane ------------------
 	return pixmapArray

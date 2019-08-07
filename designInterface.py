@@ -156,7 +156,7 @@ def imageMouseMove(QMouseEvent,wind):
 
 		name = ''
 	
-		planeAddPaint(wind.allSketchPlanes[name],wind.points); 
+		planeAddPaint(wind.allSketchPlanes[name],255,wind.points); 
 	
 		#if wind.zoom == True:
 		#	defog(wind,wind.points,wind.locationX,wind.locationY)
@@ -187,19 +187,6 @@ def imageMouseScroll(QwheelEvent,wind):
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
-		try:
-			point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
-			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
-			print (point)
-			print (drone_tile_x, drone_tile_y)
-			print (x,y)
-			wind.state.emit(wind.drone_x,wind.drone_y)
-			if x == drone_tile_x and drone_tile_y == y:
-				print('Drone here')
-			else:
-				wind.minimapScene.removeItem(wind.robotIcon)
-		except:
-			print('No ROS data')
 		if wind.single == True:
 			wind.sliderTmp = wind.beliefOpacitySlider.value()
 		wind.beliefOpacitySlider.setSliderPosition(0)
@@ -223,8 +210,10 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
 		wind.minimapScene.removeItem(wind.pic[x][y])
 		wind.minimapScene.removeItem(wind.fogArray[x][y])
-		wind.fogArray[x][y].setScale(1)
+
 		reTile(wind,wind.pic,-1)
+		reTile(wind,wind.fogArray,1)
+
 		#organizeZ(wind)
 		
 		wind.beliefLayer.setZValue(0.5)
@@ -232,7 +221,6 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.topLayer.setZValue(0)
 		redrawSketches(wind)
 
-		reTile(wind,wind.fogArray,1)
 
 		for name in wind.zoomSketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
@@ -245,6 +233,7 @@ def imageMouseScroll(QwheelEvent,wind):
 		try:
 			wind.state.emit(wind.drone_x,wind.drone_y)
 			wind.minimapScene.addItem(wind.robotIcon)
+			wind.robotIcon.setZValue(1)
 			print (wind.drone_x, wind.drone_y)
 		except:
 			print('No ROS data')
@@ -398,7 +387,7 @@ class SimulationWindow(QWidget):
 		#make iconPlane --------------------
 		self.iconPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
 		#make fogPlane
-		#self.fogPlane = self.minimapScene.addPixmap(makeTransparentPlane(self));
+		self.fogLayer = self.minimapScene.addPixmap(makeFogPlane(self));
 
 		self.pix = QPixmap('less_oldFlyoverton.png'); 
 		self.belief = QPixmap('less_oldBelief.png')
@@ -421,8 +410,10 @@ class SimulationWindow(QWidget):
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
 		#Fog
-		makeFogPlane(self)
-		self.fogArray = cutImage(self,self.fogPlane,1)
+	#	self.fogPlane = makeFogPlane(self)
+		self.fogArray = cutImage(self,self.fogLayer.pixmap(),2)
+		self.minimapScene.removeItem(self.fogLayer)
+		reTile(self,self.fogArray,2)
 		organizeZ(self)
 
 		#Tabbed Camerafeeds ----------------------
@@ -748,7 +739,7 @@ class SimulationWindow(QWidget):
 			drawDuffels(self,name,x,y)
 			self.countDuffel = self.countDuffel +1
 
-			abs_x,abs_y = relToAbsolute(self,x,y)
+			abs_x,abs_y = relToAbsolute(self,x,y,self.locationX,self.locationY)
 			msg.x = abs_x #x,y probably should be in absolute frame
 			msg.tile_x = self.locationX
 			msg.tile_y = self.locationY
@@ -770,78 +761,68 @@ class SimulationWindow(QWidget):
 
 
 	def drawDrone(self,x,y):
-		#Drone
-		'''self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
-
-		pm = self.allIconPlanes[item].pixmap()
-		painter = QPainter(pm)
-		painter.translate(x,y)
-		painter.rotate(direc)
-
-		pen = QPen(QColor(255,0,0,255)); 
-		pen.setWidth(2); 
-		painter.setPen(pen); 
-		polygon = QPolygon()
-		points = [0,0,30, 15,0,30,10,15]
-		polygon.setPoints(points)
-		painter.drawPolygon(polygon)
-
-			#painter.rotate(direc)
-			#painter.translate(-x,-y)
-		painter.end()
-			
-		self.allIconPlanes[item].setPixmap(pm); 
-		'''#self.allIconPlanes[item].setTransformOriginPoint(QPointF(0,0))
-		#self.allIconPlanes[item].setTransformOriginPoint(QPointF(x+15,y+15))
-		#self.allIconPlanes[item].setRotation(direc)
 		
-		#self.allIconPlanes[item].setPos(QPointF(x,y))
-		#self.allIconPlanes[item].setTransformOriginPoint(QPointF(x+15,y+15))
-		#self.allIconPlanes[item].setRotation(direc)
-		'''self.allIconPlanes[item].setTransformOriginPoint(QPointF(0,0))'''
+		point = self.drone_x*(984.0/4000.0),self.drone_y*(904.0/4000.0)
 		self.robotIcon = self.thisRobot
 		self.robotIcon.setScale(0.5)
 		iconBounds = self.robotIcon.boundingRect()
 
 		x = x*(984.0/4000.0) - iconBounds.width()/2 #meters to pixels
 		y = y*(904.0/4000.0) - iconBounds.height()/2 
+		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
+		drone_x = x + iconBounds.width()/2
+		drone_y = y + iconBounds.height()/2
 		if self.zoom:
-			#wind.zoomSketchLabels[name] = [centx,centy]; 
 			x = x + iconBounds.width()/2
 			y = y + iconBounds.height()/2
-			x,y = absToRelative(self,x,y)
+			#drone_x,drone_y = absToRelative(self,x,y,drone_tile_x,drone_tile_y)
+			x,y = absToRelative(self,x,y,drone_tile_x,drone_tile_y)
+			x = x - iconBounds.width()/2
+			y = y - iconBounds.height()/2
+
+
 
 		self.robotIcon.setTransformOriginPoint(QPoint(iconBounds.width()/2, iconBounds.height()/2))
 		self.robotIcon.setPos(QPoint(x,y))
 		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
 
-		point = self.drone_x*(984.0/4000.0),self.drone_y*(904.0/4000.0)
-		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
-		if self.zoom:
-			self.defogSignal.emit(x,y,drone_tile_x, drone_tile_y, self.fogArray)
+
+		print drone_tile_x,drone_tile_y
+		self.defogSignal.emit(drone_x,drone_y,drone_tile_x, drone_tile_y, self.fogArray)
 
 
 	def defog(self,pointX,pointY,x,y,obj): #call from callback -> <>
-		image = self.fogPlane
-		image.scaledToWidth(300)
-		tile = image.copy(QRect(image.width()/self.res*x,image.height()/self.res*y,self.tileX_len,self.tileY_len))
-		painter = QPainter(tile)
-		pen = QPen(QColor(0,0,100,100))
+		#self.minimapScene.removeItem(obj[x][y])
+		point = []
+		pointX = pointX - x*self.tileX_len
+		pointY = pointY - y*self.tileY_len
+		#tile = temp.toImage()
+		#image.scaledToWidth(300)
+		#tile = image.copy(QRect(image.width()/self.res*x,image.height()/self.res*y,self.tileX_len,self.tileY_len))
+		#painter = QPainter(tile)
+		#pen = QPen(QColor(0,0,100,100))
 
-		#tile.setPixel(pointX/5,pointY/5,qRgba(0,0,0,190))
-		painter.drawPoint(pointX/10,pointY/10)
-
-		painter.end()
+		point.append([pointX,pointY])
+		point.append([pointX+1,pointY+1])
+		point.append([pointX,pointY+1])
+		point.append([pointX+1,pointY])
+		planeRemovePaint(obj[x][y],0,point)
+		#tile.setPixel(pointX/5,pointY/5,qRgba(0,0,0,100)) #paintFunciton
+		#painter.drawPoint(pointX/10,pointY/10)
+		#temp = temp.fromImage(tile)
+		#painter.end()
 		#scale = QPixmap('overhead.png')
 		#testMap = QPixmap(scale.size().width(),scale.size().height()); 
 		#testMap.fill(QColor(0,50,0,0)); 
 		#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
-		obj[x][y] = QGraphicsPixmapItem(tile)
-		if self.zoom:
-			self.minimapScene.removeItem(obj[x][y])
-			self.minimapScene.addItem(obj[x][y])
-			obj[x][y].setScale(self.res)
+		#pixItem = QGraphicsPixmapItem(temp)
 
+		#obj[x][y] = pixItem
+
+		#if self.zoom:
+		#	
+		#self.minimapScene.addItem(obj[x][y])
+		#	obj[x][y].setScale(self.res)
 
 
 	def make_connections(self): 

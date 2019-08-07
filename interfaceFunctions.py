@@ -236,7 +236,7 @@ def updateModels(wind,name, vertNum, pub,zoom):
 		for i in range(0, len(vertices)):
 			print(i)
 			if wind.zoom:
-				msg.points[i].x,msg.points[i].y = relToAbsolute(wind,vertices[i][0],vertices[i][1])
+				msg.points[i].x,msg.points[i].y = relToAbsolute(wind,vertices[i][0],vertices[i][1],wind.locationX,wind.locationY)
 				msg.points[i].z = 0
 			else:
 				msg.points[i].x = vertices[i][0]
@@ -514,7 +514,19 @@ def zoomIn(wind,x,y):
 			for j in range(0,wind.res):
 				wind.minimapScene.removeItem(wind.pic[i][j])
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
-
+		try:
+			point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
+			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
+			print (point)
+			print (drone_tile_x, drone_tile_y)
+			print (x,y)
+			wind.state.emit(wind.drone_x,wind.drone_y)
+			if x == drone_tile_x and drone_tile_y == y:
+				print('Drone here')
+			else:
+				wind.minimapScene.removeItem(wind.robotIcon)
+		except:
+			print('No ROS data')
 		wind.minimapScene.addItem(wind.pic[x][y])
 		wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.pic[x][y].setPos(0,0)
@@ -610,8 +622,8 @@ def findTile(wind,pointX,pointY): #wrong, it is doing the thing where it thinks 
 
 
 
-def relToAbsolute(wind,rel_x,rel_y):
-	abs_x = rel_x/wind.res + wind.locationX*wind.minimapScene.width()/wind.res
-	abs_y = rel_y/wind.res + wind.locationY*wind.minimapScene.height()/wind.res
+def relToAbsolute(wind,rel_x,rel_y,tileX,tileY):
+	abs_x = rel_x/wind.res + tileX*wind.minimapScene.width()/wind.res
+	abs_y = rel_y/wind.res + tileY*wind.minimapScene.height()/wind.res
 	return abs_x,abs_y
 
