@@ -515,6 +515,7 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.pic[i][j])
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
 		try:
+			wind.zoom = True
 			point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
 			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
 			print (point)
@@ -559,7 +560,7 @@ def drawIcons(wind, name,centx,centy,x,y):
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',15)); 
-	painter.drawText(QPointF(wind.rel_x,wind.rel_y),name); 
+	painter.drawText(QPointF(wind.rel_x,wind.rel_y+10),name); 
 	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
@@ -568,36 +569,30 @@ def drawIcons(wind, name,centx,centy,x,y):
 def drawCameras(wind,item):
 	
 	pm = wind.allIconPlanes[item].pixmap()
+
 	pic = QImage('camera.png')
 	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
 	pen = QPen(QColor(255,0,0,255)); 
 	pen.setWidth(1); 
 	painter.setPen(pen); 
+
+
 	painter.translate(wind.cameras[item]['x'],wind.cameras[item]['y'])
 	painter.rotate(wind.cameras[item]['orientation'])
 	painter.translate(-wind.cameras[item]['x'],-wind.cameras[item]['y'])
-	painter.drawText(wind.cameras[item]['x']+23,wind.cameras[item]['y']+35,str(item)); 
-	painter.drawImage(wind.cameras[item]['x'],wind.cameras[item]['y'], pic,0,0,61,60);
 
 
-	#polygon = QPolygon()
-	#points = [wind.cameras[item]['x']-5,wind.cameras[item]['y']+5, wind.cameras[item]['x']+17, wind.cameras[item]['y']+20, wind.cameras[item]['x']+5, wind.cameras[item]['y'], wind.cameras[item]['x'], wind.cameras[item]['y']+20, \
-	#wind.cameras[item]['x']+20, wind.cameras[item]['y']+5]
-	#polygon.setPoints(points)
-	#painter.drawPolygon(polygon)
+	#translate about center
+	x = wind.cameras[item]['x'] - pic.width()/2
+	y = wind.cameras[item]['y'] - pic.height()/2
+
+
+	painter.drawText(x+23,y+35,str(item)); 
+	painter.drawImage(x,y, pic,0,0,61,60);
+
 	painter.end()
 	wind.allIconPlanes[item].setPixmap(pm); 
-
-
-
-	'''polygon = QPolygon()
-	points = [wind.cameras[item]['x'],wind.cameras[item]['y'], wind.cameras[item]['x']+30, wind.cameras[item]['y']+15, wind.cameras[item]['x'], wind.cameras[item]['y']+30]
-	polygon.setPoints(points)
-	painter.drawPolygon(polygon)'''
-
-
-
 
 
 

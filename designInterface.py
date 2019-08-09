@@ -175,7 +175,6 @@ def imageMouseRelease(QMouseEvent,wind):
 
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
-	print len(wind.minimapScene.items())
 	tmp = [(QwheelEvent.x()),(QwheelEvent.y())];
 	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
@@ -204,7 +203,7 @@ def imageMouseScroll(QwheelEvent,wind):
 
 		wind.single = False
 	if QwheelEvent.angleDelta().y() < 0:
-		wind.zoom = False
+		
 		wind.single = True
 		wind.beliefOpacitySlider.setEnabled(True)
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
@@ -213,30 +212,28 @@ def imageMouseScroll(QwheelEvent,wind):
 
 		reTile(wind,wind.pic,-1)
 		reTile(wind,wind.fogArray,1)
-
-		#organizeZ(wind)
 		
 		wind.beliefLayer.setZValue(0.5)
 		wind.iconPlane.setZValue(1)
 		wind.topLayer.setZValue(0)
+
+		if wind.zoom == True:
+			for name in wind.zoomSketchLabels.keys():
+				planeFlushPaint(wind.allSketchPlanes[name])
+				drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
+			for item in wind.cameras:
+				drawCameras(wind,item)
+			for name in wind.allDuffelNames:
+				planeFlushPaint(wind.allIconPlanes[name])
+		wind.zoom = False
 		redrawSketches(wind)
-
-
-		for name in wind.zoomSketchLabels.keys():
-			planeFlushPaint(wind.allSketchPlanes[name])
-			drawIcons(wind,name,wind.zoomCentx[name],wind.zoomCenty[name],wind.allSketchX[name],wind.allSketchY[name])
-		for item in wind.cameras:
-			drawCameras(wind,item)
-		for name in wind.allDuffelNames:
-			planeFlushPaint(wind.allIconPlanes[name])
-	#	planeFlushPaint(wind.allIconPlanes['drone']
 		try:
 			wind.state.emit(wind.drone_x,wind.drone_y)
 			wind.minimapScene.addItem(wind.robotIcon)
 			wind.robotIcon.setZValue(1)
-			print (wind.drone_x, wind.drone_y)
 		except:
 			print('No ROS data')
+
 def redrawSketches(wind):
 	print("redraw")
 	#print("Redrawing
@@ -279,7 +276,7 @@ def pullIDKPressed(wind):
 
 class SimulationWindow(QWidget):
 	sketch = pyqtSignal()
-	defogSignal = pyqtSignal(int, int, int, int, list)
+	defogSignal = pyqtSignal(int, int, int, int, list, int)
 	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
 	rightClick = pyqtSignal(int,int)
@@ -657,16 +654,6 @@ class SimulationWindow(QWidget):
 		timer2.timeout.connect(self.flash)
 		timer2.start(self.out['flash'])
 
-	'''def mux_client(self):   ##This will (probably) be handy for switching feeds, look into multiplex switcher
-		try:
-			mux = rospy.ServiceProxy('/mux/select', MuxSelect)               
-			req = MuxSelectRequest(topic='/camera/camera'+ self.cameraTabs.currentIndex()) #request a new topic
-			resp = mux(req)
-			return resp
-				
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e'''
-
 	def sketch_client(self):  #For the pop up when a sketch occurs
 		print("Sketch Client")
 		toast = QInputDialog()
@@ -787,43 +774,33 @@ class SimulationWindow(QWidget):
 		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
 
 
-		print drone_tile_x,drone_tile_y
-		self.defogSignal.emit(drone_x,drone_y,drone_tile_x, drone_tile_y, self.fogArray)
+		direc = self.worldYaw*180/math.pi
+		self.defogSignal.emit(drone_x,drone_y,drone_tile_x, drone_tile_y, self.fogArray, direc)
 
 
-	def defog(self,pointX,pointY,x,y,obj): #call from callback -> <>
-		#self.minimapScene.removeItem(obj[x][y])
-		point = []
+	def defog(self,pointX,pointY,x,y,obj,direc): 
+		points = []
+		steepness = 2
+		l = 8
 		pointX = pointX - x*self.tileX_len
 		pointY = pointY - y*self.tileY_len
-		#tile = temp.toImage()
-		#image.scaledToWidth(300)
-		#tile = image.copy(QRect(image.width()/self.res*x,image.height()/self.res*y,self.tileX_len,self.tileY_len))
-		#painter = QPainter(tile)
-		#pen = QPen(QColor(0,0,100,100))
+		#Without Cutting
+		#triPoints = [[pointX,pointY],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX-l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
+		
+		#With Cutting
+		lshort = 0.5
+		triPoints = [[pointX+lshort*math.cos(2*0.261799+math.radians(direc)),pointY+lshort*math.sin(2*0.261799+math.radians(direc))],[pointX+lshort*math.cos(2*-0.261799+math.radians(direc)),pointY+lshort*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
+ 
+ 		print int(max([p[0] for p in triPoints]))
+ 		print pointX
 
-		point.append([pointX,pointY])
-		point.append([pointX+1,pointY+1])
-		point.append([pointX,pointY+1])
-		point.append([pointX+1,pointY])
-		planeRemovePaint(obj[x][y],0,point)
-		#tile.setPixel(pointX/5,pointY/5,qRgba(0,0,0,100)) #paintFunciton
-		#painter.drawPoint(pointX/10,pointY/10)
-		#temp = temp.fromImage(tile)
-		#painter.end()
-		#scale = QPixmap('overhead.png')
-		#testMap = QPixmap(scale.size().width(),scale.size().height()); 
-		#testMap.fill(QColor(0,50,0,0)); 
-		#wind.minimapScene.addPixmap(QPixmap.fromImage(tile))
-		#pixItem = QGraphicsPixmapItem(temp)
+		for i in range(pointX,int(max([p[0] for p in triPoints]))):
+			for j in range(pointY,int(max([p[1] for p in triPoints]))):
+				tmp1 = i
+				tmp2 = j
+				triPoints.append([tmp1,tmp2]); 
 
-		#obj[x][y] = pixItem
-
-		#if self.zoom:
-		#	
-		#self.minimapScene.addItem(obj[x][y])
-		#	obj[x][y].setScale(self.res)
-
+		planeRemovePaint(obj[x][y],0,triPoints)
 
 	def make_connections(self): 
 		#Handler for final sketches

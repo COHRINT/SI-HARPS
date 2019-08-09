@@ -175,4 +175,7 @@ def organizeZ(wind):
 	wind.topLayer.setZValue(-1)
 	wind.beliefLayer.setZValue(0.5)
 	wind.iconPlane.setZValue(1)
-	#wind.fogArray[x][y].setZValue(-1)
+	try: 
+		wind.robotIcon.setZValue(1)
+	except:
+		print('No data')
