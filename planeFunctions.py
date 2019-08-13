@@ -123,7 +123,7 @@ def planeFlushColors(planeWidget,points=[],cols=[]):
 		pen = QPen(cols[i]); 
 		pen.setWidth(3); 
 		painter.setPen(pen); 
-		painter.drawPoint(points[i][0],points[i][1]); 
+		painter.drawPoint(points[i][0],points[i][1]);  
 	painter.end(); 
 	planeWidget.setPixmap(pm); 
 

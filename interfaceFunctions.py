@@ -507,6 +507,8 @@ def makeBeliefMap(wind):
 	scale = float(wind.beliefOpacitySlider.sliderPosition())/100
 	paintPixToPix(wind.beliefLayer,pm,scale)
 
+def area(x1, y1, x2, y2, x3, y3): 
+	return abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0)
 
 def zoomIn(wind,x,y):
 	if wind.zoom == False:
@@ -516,11 +518,8 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
 		try:
 			wind.zoom = True
-			point = wind.drone_x*(984.0/4000.0),wind.drone_y*(904.0/4000.0)
+			point = wind.drone_x*(wind.minimapScene.width()/4000.0),wind.drone_y*(wind.minimapScene.height()/4000.0)
 			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
-			print (point)
-			print (drone_tile_x, drone_tile_y)
-			print (x,y)
 			wind.state.emit(wind.drone_x,wind.drone_y)
 			if x == drone_tile_x and drone_tile_y == y:
 				print('Drone here')
@@ -610,7 +609,7 @@ def drawDuffels(wind,name,x,y):
 	wind.allIconPlanes[name].setPixmap(pm); 
 	wind.allIconPlanes[name].setZValue(1)
 
-def findTile(wind,pointX,pointY): #wrong, it is doing the thing where it thinks its absolute
+def findTile(wind,pointX,pointY): # it thinks its absolute
 	x = int(math.floor(pointX/wind.minimapScene.width()*wind.res))
 	y = int(math.floor(pointY/wind.minimapScene.height()*wind.res))
 	return x,y

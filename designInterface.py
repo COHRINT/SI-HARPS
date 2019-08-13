@@ -401,13 +401,16 @@ class SimulationWindow(QWidget):
 		self.topLayer = self.minimapScene.addPixmap(self.pix); 
 
 
-
+		self.minimapScene.setSceneRect(0,0,self.old.size().width(),self.old.size().height()) #holding the geometry constant
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
+		self.minimapView.setFixedSize(self.minimapScene.width(), self.minimapScene.height())
+		self.minimapView.setSceneRect(0,0,self.minimapScene.width(), self.minimapScene.height())
+
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
+
 		#Fog
-	#	self.fogPlane = makeFogPlane(self)
 		self.fogArray = cutImage(self,self.fogLayer.pixmap(),2)
 		self.minimapScene.removeItem(self.fogLayer)
 		reTile(self,self.fogArray,2)
@@ -677,10 +680,19 @@ class SimulationWindow(QWidget):
 			else:
 				#If the name is not new just remove the temporary stuff
 				planeFlushPaint(self.allSketchPlanes[''],[]);
-
 				self.allSketchPlanes.pop('')
 				self.allSketches.pop('')
-			#Redraw regardless
+				#Flip ownership if rename to a different level
+				if self.zoom == True:
+					if self.sketchName in self.sketchLabels.keys():
+						self.zoomSketchLabels[self.sketchName] = self.sketchLabels.pop(self.sketchName)
+						self.allIconPlanes[self.sketchName] = self.minimapScene.addPixmap(makeTransparentPlane(self));
+				elif self.zoom == False:
+					if self.sketchName in self.zoomSketchLabels.keys():
+						self.minimapScene.removeItem(self.allIconPlanes[self.sketchName])
+						self.allIconPlanes.pop(self.sketchName)
+						self.sketchLabels[self.sketchName] = self.zoomSketchLabels.pop(self.sketchName)
+			#Update existing sketch if it is not new
 			self.allSketches[self.sketchName] = self.allSketchPaths[-1]; 
 			pm,centx,centy = updateModels(self,self.sketchName, self.vertNum,True,self.zoom)
 			if self.zoom == True:
@@ -739,23 +751,22 @@ class SimulationWindow(QWidget):
 		self.drone_x = data.pose.position.x
 		self.drone_y = data.pose.position.y
 		worldRoll, worldPitch, self.worldYaw = euler_from_quaternion([data.pose.orientation.x,
-                                                                 data.pose.orientation.y,
-                                                                 data.pose.orientation.z,
-                                                                 data.pose.orientation.w])
+																 data.pose.orientation.y,
+																 data.pose.orientation.z,
+																 data.pose.orientation.w])
 		
 
 		self.state.emit(self.drone_x,self.drone_y)
 
 
 	def drawDrone(self,x,y):
-		
 		point = self.drone_x*(984.0/4000.0),self.drone_y*(904.0/4000.0)
 		self.robotIcon = self.thisRobot
 		self.robotIcon.setScale(0.5)
 		iconBounds = self.robotIcon.boundingRect()
 
-		x = x*(984.0/4000.0) - iconBounds.width()/2 #meters to pixels
-		y = y*(904.0/4000.0) - iconBounds.height()/2 
+		x = x*(self.minimapScene.width()/4000.0) - iconBounds.width()/2 #meters to pixels
+		y = y*(self.minimapScene.height()/4000.0) - iconBounds.height()/2 
 		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
 		drone_x = x + iconBounds.width()/2
 		drone_y = y + iconBounds.height()/2
@@ -768,11 +779,11 @@ class SimulationWindow(QWidget):
 			y = y - iconBounds.height()/2
 
 
-
+			if not drone_tile_x == self.locationX or not drone_tile_y == self.locationY:
+				self.minimapScene.removeItem(self.robotIcon)
 		self.robotIcon.setTransformOriginPoint(QPoint(iconBounds.width()/2, iconBounds.height()/2))
 		self.robotIcon.setPos(QPoint(x,y))
 		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
-
 
 		direc = self.worldYaw*180/math.pi
 		self.defogSignal.emit(drone_x,drone_y,drone_tile_x, drone_tile_y, self.fogArray, direc)
@@ -780,27 +791,32 @@ class SimulationWindow(QWidget):
 
 	def defog(self,pointX,pointY,x,y,obj,direc): 
 		points = []
-		steepness = 2
-		l = 8
+		steepness = 1
+		l = 10
 		pointX = pointX - x*self.tileX_len
 		pointY = pointY - y*self.tileY_len
 		#Without Cutting
-		#triPoints = [[pointX,pointY],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX-l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
+		triPoints = [[pointX,pointY],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
 		
 		#With Cutting
-		lshort = 0.5
-		triPoints = [[pointX+lshort*math.cos(2*0.261799+math.radians(direc)),pointY+lshort*math.sin(2*0.261799+math.radians(direc))],[pointX+lshort*math.cos(2*-0.261799+math.radians(direc)),pointY+lshort*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
+		lshort = 5
+		#triPoints = [[pointX+lshort*math.cos(2*0.261799+math.radians(direc)),pointY+lshort*math.sin(2*0.261799+math.radians(direc))],[pointX+lshort*math.cos(2*-0.261799+math.radians(direc)),pointY+lshort*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
  
- 		print int(max([p[0] for p in triPoints]))
- 		print pointX
+		A = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],triPoints[2][0],triPoints[2][1])
 
-		for i in range(pointX,int(max([p[0] for p in triPoints]))):
-			for j in range(pointY,int(max([p[1] for p in triPoints]))):
-				tmp1 = i
-				tmp2 = j
-				triPoints.append([tmp1,tmp2]); 
+		for i in range(pointX-l,pointX+l):
+			for j in range(pointY-l,pointY+l):
+				A1 = area(i,j,triPoints[1][0],triPoints[1][1],triPoints[2][0],triPoints[2][1])
+				A2 = area(triPoints[0][0],triPoints[0][1],i,j,triPoints[2][0],triPoints[2][1])
+				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
+				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 1)):
+					tmp1 = i
+					tmp2 = j
+					triPoints.append([tmp1,tmp2]); 
+
 
 		planeRemovePaint(obj[x][y],0,triPoints)
+
 
 	def make_connections(self): 
 		#Handler for final sketches
