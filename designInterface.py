@@ -769,7 +769,7 @@ class SimulationWindow(QWidget):
 		y = y*(self.minimapScene.height()/4000.0) - iconBounds.height()/2 
 		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
 		drone_x = x + iconBounds.width()/2
-		drone_y = y + iconBounds.height()/2
+		drone_y = y + iconBounds.height()/2 
 		if self.zoom:
 			x = x + iconBounds.width()/2
 			y = y + iconBounds.height()/2
@@ -781,6 +781,9 @@ class SimulationWindow(QWidget):
 
 			if not drone_tile_x == self.locationX or not drone_tile_y == self.locationY:
 				self.minimapScene.removeItem(self.robotIcon)
+			elif drone_tile_x == self.locationX and drone_tile_y == self.locationY and self.robotIcon not in self.minimapScene.items():
+				self.minimapScene.addItem(self.robotIcon)
+		
 		self.robotIcon.setTransformOriginPoint(QPoint(iconBounds.width()/2, iconBounds.height()/2))
 		self.robotIcon.setPos(QPoint(x,y))
 		self.robotIcon.setRotation(self.worldYaw*180/math.pi + 90)
@@ -790,8 +793,6 @@ class SimulationWindow(QWidget):
 
 
 	def defog(self,pointX,pointY,x,y,obj,direc): 
-		points = []
-		steepness = 1
 		l = 10
 		pointX = pointX - x*self.tileX_len
 		pointY = pointY - y*self.tileY_len
@@ -799,7 +800,7 @@ class SimulationWindow(QWidget):
 		triPoints = [[pointX,pointY],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
 		
 		#With Cutting
-		lshort = 5
+		#lshort = 5
 		#triPoints = [[pointX+lshort*math.cos(2*0.261799+math.radians(direc)),pointY+lshort*math.sin(2*0.261799+math.radians(direc))],[pointX+lshort*math.cos(2*-0.261799+math.radians(direc)),pointY+lshort*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
  
 		A = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],triPoints[2][0],triPoints[2][1])
@@ -810,13 +811,30 @@ class SimulationWindow(QWidget):
 				A2 = area(triPoints[0][0],triPoints[0][1],i,j,triPoints[2][0],triPoints[2][1])
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
 				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 1)):
-					tmp1 = i
-					tmp2 = j
-					triPoints.append([tmp1,tmp2]); 
+					triPoints.append([i,j]); 
 
+		for p in triPoints:
+			points = []
+			if p[0] > self.tileX_len and p[1] > self.tileY_len:
+				p[0] = p[0]-self.tileX_len
+				p[1] = p[1]-self.tileY_len
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x+1][y+1],0,points)
+			elif p[0] > self.tileX_len and  p[1] < self.tileY_len:
+				p[0] = p[0]-self.tileX_len
+				#p[1] = p[1]-self.tileY_len
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x+1][y],0,points)
+			elif p[0] < self.tileX_len and p[1] > self.tileY_len:
+				#p[0] = p[0]-self.tileX_len
+				p[1] = p[1]-self.tileY_len
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x][y+1],0,points)
+			else: 
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x][y],0,points)
 
-		planeRemovePaint(obj[x][y],0,triPoints)
-
+		#planeRemovePaint(obj[x][y],0,triPoints)
 
 	def make_connections(self): 
 		#Handler for final sketches
@@ -835,8 +853,6 @@ class SimulationWindow(QWidget):
 
 		#Zoom
 		self.minimapView.wheelEvent = lambda event:imageMouseScroll(event,self);
-
-
 
 		#Handlers for sliders
 		self.beliefOpacitySlider.valueChanged.connect(lambda: makeBeliefMap(self)); 
