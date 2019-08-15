@@ -4,17 +4,17 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import *; 
 from PyQt5.QtGui import *;
 from PyQt5.QtCore import *;
-import sys,os
+import sys,os, os.path
 
 from topic_tools.srv import *
-
 from interfaceFunctions import *
 from planeFunctions import *
+
 import numpy as np
 import time
 import yaml
 import rospy
-import QArrow
+from scripts import QArrow
 import struct
 import array
 import cv2
@@ -131,7 +131,6 @@ def imageMousePress(QMouseEvent,wind):
 		wind.rightClick.emit(tmp[0],tmp[1])
 		wind.sketchListen=False;
 
-	print(tmp); 
 	if(wind.sketchListen):
 		wind.allSketchPaths.append([]); 
 		#wind.sketchingInProgress = True
@@ -157,9 +156,6 @@ def imageMouseMove(QMouseEvent,wind):
 		name = ''
 	
 		planeAddPaint(wind.allSketchPlanes[name],255,wind.points); 
-	
-		#if wind.zoom == True:
-		#	defog(wind,wind.points,wind.locationX,wind.locationY)
 
 def imageMouseRelease(QMouseEvent,wind):
 	if(wind.sketchingInProgress and wind.sketchListen):
@@ -182,7 +178,6 @@ def imageMouseScroll(QwheelEvent,wind):
 	x,y = findTile(wind,point.x(),point.y())
 	wind.locationX = x
 	wind.locationY = y
-	print (x,y)
 	if QwheelEvent.angleDelta().y() > 0:
 		zoomIn(wind,x,y)
 		wind.zoom = True
@@ -291,6 +286,7 @@ class SimulationWindow(QWidget):
 
 		self.game = False; 
 		self.res = 8
+		self.map_size = 4000.0
 		#self.setGeometry(300, 300, 250, 150)
 		self.setWindowTitle("SI-HARPS BluePrint");
 		self.setStyleSheet("background-color:slategray;")
@@ -453,14 +449,6 @@ class SimulationWindow(QWidget):
 		self.cameraFeed5.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 		self.cameraFeed5.setPixmap(QPixmap("images/droneView.png"))
 
-		# th = droneThread()
-		# th.dronePixMap.connect(self.setDroneImage)
-		# th.start(self)
-
-		# cameraFeed2.setScaledContents(True); 
-		# cameraFeed2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
-		# cameraFeed2.setPixmap(QPixmap("overhead.png"))
-
 		self.cameraTabs.addTab(self.tab1,"Cam 1")
 		self.cameraTabs.addTab(self.tab2,"Cam 2")
 		self.cameraTabs.addTab(self.tab3,"Cam 3")
@@ -603,7 +591,7 @@ class SimulationWindow(QWidget):
 		self.layout.addWidget(npcGroup,15,16,1,14)
 
 		#Get all values from yaml file
-		with open("npc.yaml", 'r') as fp:
+		with open("scripts/npc.yaml", 'r') as fp:
 			self.out = yaml.load(fp)
 		f = self.npcBox.font()
 		f.setPointSize(16) # sets the size to 18
@@ -615,7 +603,7 @@ class SimulationWindow(QWidget):
 		timer.timeout.connect(self.generateInput)
 		timer.start(self.out['duration'])
 
-
+		#Add arrow
 		self.thisRobot = QArrow.QArrow(color=QColor(255,0,0,255))
 		self.minimapScene.addItem(self.thisRobot);
 
@@ -718,7 +706,7 @@ class SimulationWindow(QWidget):
 		#redrawSketches(self)
 
 	def cameraSketchClient(self):
-		with open("camera.yaml", 'r') as fp:
+		with open("scripts/camera.yaml", 'r') as fp:
 			self.cameras = yaml.load(fp)
 		for item in self.cameras:
 			self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
@@ -760,13 +748,13 @@ class SimulationWindow(QWidget):
 
 
 	def drawDrone(self,x,y):
-		point = self.drone_x*(984.0/4000.0),self.drone_y*(904.0/4000.0)
+		point = self.drone_x*(self.minimapScene.width()/self.map_size),self.drone_y*(self.minimapScene.height()/self.map_size)
 		self.robotIcon = self.thisRobot
 		self.robotIcon.setScale(0.5)
 		iconBounds = self.robotIcon.boundingRect()
 
-		x = x*(self.minimapScene.width()/4000.0) - iconBounds.width()/2 #meters to pixels
-		y = y*(self.minimapScene.height()/4000.0) - iconBounds.height()/2 
+		x = x*(self.minimapScene.width()/self.map_size) - iconBounds.width()/2 #meters to pixels
+		y = y*(self.minimapScene.height()/self.map_size) - iconBounds.height()/2 
 		drone_tile_x, drone_tile_y = findTile(self,point[0],point[1])
 		drone_x = x + iconBounds.width()/2
 		drone_y = y + iconBounds.height()/2 
@@ -798,11 +786,7 @@ class SimulationWindow(QWidget):
 		pointY = pointY - y*self.tileY_len
 		#Without Cutting
 		triPoints = [[pointX,pointY],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
-		
-		#With Cutting
-		#lshort = 5
-		#triPoints = [[pointX+lshort*math.cos(2*0.261799+math.radians(direc)),pointY+lshort*math.sin(2*0.261799+math.radians(direc))],[pointX+lshort*math.cos(2*-0.261799+math.radians(direc)),pointY+lshort*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*-0.261799+math.radians(direc)),pointY+l*math.sin(2*-0.261799+math.radians(direc))],[pointX+l*math.cos(2*0.261799+math.radians(direc)),pointY+l*math.sin(2*0.261799+math.radians(direc))]];
- 
+
 		A = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],triPoints[2][0],triPoints[2][1])
 
 		for i in range(pointX-l,pointX+l):
@@ -810,11 +794,28 @@ class SimulationWindow(QWidget):
 				A1 = area(i,j,triPoints[1][0],triPoints[1][1],triPoints[2][0],triPoints[2][1])
 				A2 = area(triPoints[0][0],triPoints[0][1],i,j,triPoints[2][0],triPoints[2][1])
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
-				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 1)):
+				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 2)):
 					triPoints.append([i,j]); 
-
+		x_index = x
+		y_index = y
 		for p in triPoints:
 			points = []
+			'''p_x = p[0]/self.tileX_len
+			p_y = p[1]/self.tileY_len
+			if p_x > 1:
+				p[0] = p_x*self.tileX_len - self.tileX_len
+				x_index = x+1
+			#elif p_x < 0:
+				#p[0] = p_x*self.tileX_len + self.tileX_len
+				#x_index = x-1
+			elif p_y > 1:
+				p[1] = p_y*self.tileY_len - self.tileY_len
+				y_index = y+1
+			#elif p_y < 0:
+				#p[1] = p_y*self.tileY_len + self.tileY_len
+				#y_index = y-1
+			points.append([p[0],p[1]])
+			planeRemovePaint(obj[x_index][y_index],0,points)'''
 			if p[0] > self.tileX_len and p[1] > self.tileY_len:
 				p[0] = p[0]-self.tileX_len
 				p[1] = p[1]-self.tileY_len
@@ -830,6 +831,16 @@ class SimulationWindow(QWidget):
 				p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(obj[x][y+1],0,points)
+			elif p[0] < 0 and p[1] < self.tileY_len:
+				p[0] = p[0]+self.tileX_len
+				#p[1] = p[1]-self.tileY_len
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x-1][y],0,points)
+			elif p[0] < self.tileX_len and p[1] < 0:
+				#p[0] = p[0]+self.tileX_len
+				p[1] = p[1]+self.tileY_len
+				points.append([p[0],p[1]])
+				planeRemovePaint(obj[x][y-1],0,points)
 			else: 
 				points.append([p[0],p[1]])
 				planeRemovePaint(obj[x][y],0,points)

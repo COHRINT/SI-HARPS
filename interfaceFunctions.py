@@ -518,7 +518,7 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
 		try:
 			wind.zoom = True
-			point = wind.drone_x*(wind.minimapScene.width()/4000.0),wind.drone_y*(wind.minimapScene.height()/4000.0)
+			point = wind.drone_x*(wind.minimapScene.width()/wind.map_size),wind.drone_y*(wind.minimapScene.height()/wind.map_size)
 			drone_tile_x, drone_tile_y = findTile(wind,point[0],point[1])
 			wind.state.emit(wind.drone_x,wind.drone_y)
 			if x == drone_tile_x and drone_tile_y == y:
@@ -527,6 +527,7 @@ def zoomIn(wind,x,y):
 				wind.minimapScene.removeItem(wind.robotIcon)
 		except:
 			print('No ROS data')
+		#wind.minimapScene.update()
 		wind.minimapScene.addItem(wind.pic[x][y])
 		wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.pic[x][y].setPos(0,0)
@@ -569,7 +570,7 @@ def drawCameras(wind,item):
 	
 	pm = wind.allIconPlanes[item].pixmap()
 
-	pic = QImage('camera.png')
+	pic = QImage('images/camera.png')
 	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
 	pen = QPen(QColor(255,0,0,255)); 
