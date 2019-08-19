@@ -186,7 +186,8 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setSliderPosition(0)
 		wind.beliefOpacitySlider.setEnabled(False)
 		wind.pic[x][y].setScale(wind.res)
-		wind.fogArray[x][y].setScale(wind.res)
+		wind.googleFog[x][y].setScale(wind.res)
+		#wind.fogArray[x][y].setScale(wind.res)
 		wind.iconPlane.setZValue(5)
 		wind.topLayer.setZValue(-5)
 		for name in wind.sketchLabels.keys():
@@ -204,9 +205,11 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
 		wind.minimapScene.removeItem(wind.pic[x][y])
 		wind.minimapScene.removeItem(wind.fogArray[x][y])
-
+		wind.minimapScene.removeItem(wind.googleFog[x][y])
 		reTile(wind,wind.pic,-1)
 		reTile(wind,wind.fogArray,1)
+		reTile(wind,wind.googleFog,-2)
+
 		
 		wind.beliefLayer.setZValue(0.5)
 		wind.iconPlane.setZValue(1)
@@ -405,9 +408,11 @@ class SimulationWindow(QWidget):
 
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
+		self.pix = makeCopyWithAlpha(self.pix,255)
 
 		#Fog
 		self.fogArray = cutImage(self,self.fogLayer.pixmap(),2)
+		self.googleFog = cutImage(self,self.pix,-1)
 		self.minimapScene.removeItem(self.fogLayer)
 		reTile(self,self.fogArray,2)
 		organizeZ(self)
@@ -606,6 +611,7 @@ class SimulationWindow(QWidget):
 		#Add arrow
 		self.thisRobot = QArrow.QArrow(color=QColor(255,0,0,255))
 		self.minimapScene.addItem(self.thisRobot);
+		self.thisRobot.setZValue(2)
 
 		self.layout.addLayout(sliderLayout,15,1,2,14) 
 
@@ -820,32 +826,36 @@ class SimulationWindow(QWidget):
 				p[0] = p[0]-self.tileX_len
 				p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x+1][y+1],0,points)
 				planeRemovePaint(obj[x+1][y+1],0,points)
 			elif p[0] > self.tileX_len and  p[1] < self.tileY_len:
 				p[0] = p[0]-self.tileX_len
 				#p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x+1][y],0,points)
 				planeRemovePaint(obj[x+1][y],0,points)
 			elif p[0] < self.tileX_len and p[1] > self.tileY_len:
 				#p[0] = p[0]-self.tileX_len
 				p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x][y+1],0,points)
 				planeRemovePaint(obj[x][y+1],0,points)
 			elif p[0] < 0 and p[1] < self.tileY_len:
 				p[0] = p[0]+self.tileX_len
 				#p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x-1][y],0,points)
 				planeRemovePaint(obj[x-1][y],0,points)
 			elif p[0] < self.tileX_len and p[1] < 0:
 				#p[0] = p[0]+self.tileX_len
 				p[1] = p[1]+self.tileY_len
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x][y-1],0,points)
 				planeRemovePaint(obj[x][y-1],0,points)
 			else: 
 				points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x][y],0,points)
 				planeRemovePaint(obj[x][y],0,points)
-
-		#planeRemovePaint(obj[x][y],0,triPoints)
 
 	def make_connections(self): 
 		#Handler for final sketches

@@ -529,11 +529,13 @@ def zoomIn(wind,x,y):
 			print('No ROS data')
 		#wind.minimapScene.update()
 		wind.minimapScene.addItem(wind.pic[x][y])
-		wind.minimapScene.addItem(wind.fogArray[x][y])
+		#wind.minimapScene.addItem(wind.fogArray[x][y])
+		wind.minimapScene.addItem(wind.googleFog[x][y])
 		wind.pic[x][y].setPos(0,0)
-		wind.fogArray[x][y].setPos(0,0)
-		wind.fogArray[x][y].setZValue(0)
-	
+		#wind.fogArray[x][y].setPos(0,0)
+		#wind.fogArray[x][y].setZValue(0)
+		wind.googleFog[x][y].setPos(0,0)
+		wind.googleFog[x][y].setZValue(0)
 
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:

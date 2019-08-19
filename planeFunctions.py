@@ -51,6 +51,21 @@ def makeTransparentPlane(wind):
 	testMap.fill(QtCore.Qt.transparent); 
 	return testMap; 
 
+def makeCopyWithAlpha(planeWidget,value):
+	pm = planeWidget
+	temp = QPixmap(pm.size())
+	temp.fill(Qt.transparent)
+
+	p = QPainter(temp)
+	p.setCompositionMode(QPainter.CompositionMode_Source)
+	p.drawPixmap(0,0,pm)
+	p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
+	p.fillRect(temp.rect(), QColor(0,0,0,value))
+	p.end
+
+	pixmap = temp
+	return pixmap
+
 def absToRelative(wind,abs_x,abs_y,tilex,tiley):
 	rel_x = (abs_x - tilex*wind.minimapScene.width()/wind.res)*wind.res
 	rel_y = (abs_y - tiley*wind.minimapScene.height()/wind.res)*wind.res
@@ -80,7 +95,7 @@ def planeAddPaint(planeWidget,value,points=[],col=None,pen=None):
 def planeRemovePaint(planeWidget,value,points=[],col=None,pen=None):
 
 	pm = planeWidget.pixmap(); 
-
+	pm.toImage()
 	painter = QPainter(pm); 
 	painter.setCompositionMode(QtGui.QPainter.CompositionMode_Clear)
 	if(pen is None):
