@@ -185,7 +185,7 @@ def imageMouseScroll(QwheelEvent,wind):
 			wind.sliderTmp = wind.beliefOpacitySlider.value()
 		wind.beliefOpacitySlider.setSliderPosition(0)
 		wind.beliefOpacitySlider.setEnabled(False)
-		wind.pic[x][y].setScale(wind.res)
+		wind.pic[x][y].setScale(1)
 		wind.googleFog[x][y].setScale(wind.res)
 		#wind.fogArray[x][y].setScale(wind.res)
 		wind.iconPlane.setZValue(5)
@@ -198,7 +198,7 @@ def imageMouseScroll(QwheelEvent,wind):
 			planeFlushPaint(wind.allIconPlanes[item])
 
 		wind.single = False
-	if QwheelEvent.angleDelta().y() < 0:
+	if QwheelEvent.angleDelta().y() < 0 and wind.single == False:
 		
 		wind.single = True
 		wind.beliefOpacitySlider.setEnabled(True)
@@ -277,6 +277,7 @@ class SimulationWindow(QWidget):
 	defogSignal = pyqtSignal(int, int, int, int, list, int)
 	cameraSketch = pyqtSignal()
 	dronePixMap = pyqtSignal(QImage)
+	beliefPixMap = pyqtSignal(QImage)
 	rightClick = pyqtSignal(int,int)
 	state = pyqtSignal(int,int)
 
@@ -329,7 +330,7 @@ class SimulationWindow(QWidget):
 		self.zoom = False
 		self.single = True
 		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
-
+		self.belief_update = rospy.Subscriber("/image_raw", Image, self.belief_callback)
 		self.allSketchX = {}
 		self.allSketchY = {}
 		self.zoomCentx = {}
@@ -385,16 +386,17 @@ class SimulationWindow(QWidget):
 		#make fogPlane
 		self.fogLayer = self.minimapScene.addPixmap(makeFogPlane(self));
 
-		self.pix = QPixmap('less_oldFlyoverton.png'); 
-		self.belief = QPixmap('less_oldBelief.png')
-		self.old = QPixmap('overhead.png')
+		self.pix = QPixmap('images/less_oldFlyoverton.png'); 
+		self.belief = QPixmap('images/less_oldBelief.png')
+		self.old = QPixmap('images/overhead.png')
 
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
-		self.pic = cutImage(self, self.old,-1)
-
+		#self.pic = cutImage(self, self.old,-1)
+		self.pic = readImages(self,self.old,-1)
+		
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
 		self.topLayer = self.minimapScene.addPixmap(self.pix); 
@@ -802,52 +804,31 @@ class SimulationWindow(QWidget):
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
 				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 2)):
 					triPoints.append([i,j]); 
-		x_index = x
-		y_index = y
+
 		for p in triPoints:
 			points = []
-			'''p_x = p[0]/self.tileX_len
-			p_y = p[1]/self.tileY_len
-			if p_x > 1:
-				p[0] = p_x*self.tileX_len - self.tileX_len
-				x_index = x+1
-			#elif p_x < 0:
-				#p[0] = p_x*self.tileX_len + self.tileX_len
-				#x_index = x-1
-			elif p_y > 1:
-				p[1] = p_y*self.tileY_len - self.tileY_len
-				y_index = y+1
-			#elif p_y < 0:
-				#p[1] = p_y*self.tileY_len + self.tileY_len
-				#y_index = y-1
-			points.append([p[0],p[1]])
-			planeRemovePaint(obj[x_index][y_index],0,points)'''
-			if p[0] > self.tileX_len and p[1] > self.tileY_len:
+			if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
 				p[0] = p[0]-self.tileX_len
 				p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(self.googleFog[x+1][y+1],0,points)
 				planeRemovePaint(obj[x+1][y+1],0,points)
-			elif p[0] > self.tileX_len and  p[1] < self.tileY_len:
+			elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
 				p[0] = p[0]-self.tileX_len
-				#p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(self.googleFog[x+1][y],0,points)
 				planeRemovePaint(obj[x+1][y],0,points)
-			elif p[0] < self.tileX_len and p[1] > self.tileY_len:
-				#p[0] = p[0]-self.tileX_len
+			elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
 				p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(self.googleFog[x][y+1],0,points)
 				planeRemovePaint(obj[x][y+1],0,points)
-			elif p[0] < 0 and p[1] < self.tileY_len:
+			elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
 				p[0] = p[0]+self.tileX_len
-				#p[1] = p[1]-self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(self.googleFog[x-1][y],0,points)
 				planeRemovePaint(obj[x-1][y],0,points)
-			elif p[0] < self.tileX_len and p[1] < 0:
-				#p[0] = p[0]+self.tileX_len
+			elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
 				p[1] = p[1]+self.tileY_len
 				points.append([p[0],p[1]])
 				planeRemovePaint(self.googleFog[x][y-1],0,points)
@@ -904,6 +885,17 @@ class SimulationWindow(QWidget):
 
 			if(dialog.clickedButton().text() == "Yes"):
 				event.ignore(); '''
+
+	def belief_callback(self,msg):
+		print 'naise'
+
+		image_data = msg.data
+		image_height = msg.height
+		image_width = msg.width
+		bytes_per_line = msg.step
+		self.image = QImage(image_data,image_width,image_height,bytes_per_line,QImage.Format_RGB888)
+		self.minimapScene.removeItem(self.beliefLayer)
+		self.beliefLayer = self.minimapScene.addPixmap(self.image)
 
 	def SetDroneImage(self, msg):
 

@@ -39,14 +39,14 @@ def makeTruePlane(wind):
 
 
 def makeFogPlane(wind):
-	scale = QPixmap('overhead.png')
+	scale = QPixmap('images/overhead.png')
 	fogPlane = QPixmap(scale.size().width(),scale.size().height()); 
 	fogPlane.fill(QColor(0,0,0,100)); 
 	return fogPlane
 
 def makeTransparentPlane(wind):
 	
-	scale = QPixmap('overhead.png')
+	scale = QPixmap('images/overhead.png')
 	testMap = QPixmap(scale.size().width(),scale.size().height()); 
 	testMap.fill(QtCore.Qt.transparent); 
 	return testMap; 
@@ -173,6 +173,20 @@ def cutImage(wind, image,z):
 			#wind.minimapScene.addItem(pixmapArray[i][j])
 			pixmapArray[i][j].setZValue(z)
 			#map plane ------------------
+	return pixmapArray
+
+def readImages(wind, image, z):
+	pixmapArray = QGraphicsPixmapItem()
+	pixmapArray = [[ 0 for x in range(0,wind.res)] for y in range(0,wind.res)]
+	wind.tileX_len=image.width()/wind.res
+	wind.tileY_len=image.height()/wind.res
+	for i in range(0,wind.res):
+		for j in range(0,wind.res):
+			pixmapArray[i][j] = QGraphicsPixmapItem(image)#image + '_' + i + '_' + j
+			pixmapArray[i][j].setPos(wind.tileX_len*i,wind.tileY_len*j)
+			pixmapArray[i][j].setScale(1/wind.res)
+			pixmapArray[i][j].setZValue(z)
+
 	return pixmapArray
 
 def reTile(wind,pixmapArray,z):

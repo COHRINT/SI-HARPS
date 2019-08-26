@@ -532,8 +532,6 @@ def zoomIn(wind,x,y):
 		#wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.minimapScene.addItem(wind.googleFog[x][y])
 		wind.pic[x][y].setPos(0,0)
-		#wind.fogArray[x][y].setPos(0,0)
-		#wind.fogArray[x][y].setZValue(0)
 		wind.googleFog[x][y].setPos(0,0)
 		wind.googleFog[x][y].setZValue(0)
 
@@ -562,7 +560,7 @@ def drawIcons(wind, name,centx,centy,x,y):
 	pen.setWidth(10); 
 	painter.setPen(pen); 
 	painter.setFont(QtGui.QFont('Decorative',15)); 
-	painter.drawText(QPointF(wind.rel_x,wind.rel_y+10),name); 
+	painter.drawText(QPointF(wind.rel_x+10,wind.rel_y+10),name); 
 	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
