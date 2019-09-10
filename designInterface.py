@@ -586,6 +586,7 @@ class SimulationWindow(QWidget):
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
 
 		#NPC information -------------------------
+		'''
 		npcGroup = QGroupBox()
 		hbox3 = QHBoxLayout()
 		npcGroup.setLayout(hbox3)
@@ -603,12 +604,11 @@ class SimulationWindow(QWidget):
 		f = self.npcBox.font()
 		f.setPointSize(16) # sets the size to 18
 		self.npcBox.setFont(f)
-		self.generateInput()
 
-
-		timer = QTimer(self)
-		timer.timeout.connect(self.generateInput)
-		timer.start(self.out['duration'])
+		#self.generateInput()
+		#timer = QTimer(self)
+		#timer.timeout.connect(self.generateInput)
+		#timer.start(self.out['duration'])'''
 
 		#Add arrow
 		self.thisRobot = QArrow.QArrow(color=QColor(255,0,0,255))
@@ -842,7 +842,7 @@ class SimulationWindow(QWidget):
 		#Handler for final sketches
 		self.sketch.connect(self.sketch_client)
 		self.cameraSketch.connect(self.cameraSketchClient)
-		self.rightClick.connect(self.rightClickClient)
+		#self.rightClick.connect(self.rightClickClient)
 		self.state.connect(self.drawDrone)
 		self.defogSignal.connect(self.defog)
 		#To be created handler for clicking other tabs
