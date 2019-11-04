@@ -31,12 +31,12 @@ import time
 import math
 import rospy
 import yaml
-from interface.msg import *
 
 from planeFunctions import *;
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure, SubplotParams
+from harps_interface.msg import *
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon,Point
 import shapely
@@ -205,8 +205,8 @@ def updateModels(wind,name, vertNum, pub,zoom):
 
 	rate = rospy.Rate(10)
 
-	sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
-	msg = sketch()
+	sketchPub = rospy.Publisher('/Sketch', Sketch, queue_size=10)
+	msg = Sketch()
 
 	try:
 		cHull = ConvexHull(pairedPoints);

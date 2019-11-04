@@ -343,7 +343,7 @@ class SimulationWindow(QWidget):
 		self.duffel_pub = rospy.Publisher('/duffel', duffel, queue_size=10)
 		self.cam_num = rospy.Publisher("/Camera_Num", Int16, queue_size=1)
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
-		self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+		self.sketchPub = rospy.Publisher('/Sketch', Sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
