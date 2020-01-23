@@ -534,6 +534,7 @@ def zoomIn(wind,x,y):
 		wind.pic[x][y].setPos(0,0)
 		wind.googleFog[x][y].setPos(0,0)
 		wind.googleFog[x][y].setZValue(0)
+		wind.pic[x][y].setZValue(10)
 
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:

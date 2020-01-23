@@ -175,17 +175,20 @@ def cutImage(wind, image,z):
 			#map plane ------------------
 	return pixmapArray
 
-def readImages(wind, image, z):
+def readImages(wind, image, location, z):
 	pixmapArray = QGraphicsPixmapItem()
+
 	pixmapArray = [[ 0 for x in range(0,wind.res)] for y in range(0,wind.res)]
 	wind.tileX_len=image.width()/wind.res
 	wind.tileY_len=image.height()/wind.res
 	for i in range(0,wind.res):
 		for j in range(0,wind.res):
-			pixmapArray[i][j] = QGraphicsPixmapItem(image)#image + '_' + i + '_' + j
-			pixmapArray[i][j].setPos(wind.tileX_len*i,wind.tileY_len*j)
-			pixmapArray[i][j].setScale(1/wind.res)
-			pixmapArray[i][j].setZValue(z)
+			image = QPixmap(location + 'mini_' + str(i) + '_' + str(j) + '.png')
+			wind.image_w = image.width()
+			wind.image_h = image.height()
+			pixmapArray[j][7-i] = QGraphicsPixmapItem(image)
+			pixmapArray[j][7-i].setPos(wind.tileX_len*i,wind.tileY_len*j)
+			pixmapArray[j][7-i].setZValue(z)
 
 	return pixmapArray
 
