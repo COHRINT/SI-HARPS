@@ -403,10 +403,14 @@ class SimulationWindow(QWidget):
 
 
 		self.minimapScene.setSceneRect(0,0,self.old.size().width(),self.old.size().height()) #holding the geometry constant
+		print(self.old.size().width(), self.old.size().height())
 		self.minimapView.setScene(self.minimapScene); 
 		self.minimapView.setStyleSheet("border: 4px inset grey")
-		self.minimapView.setFixedSize(self.minimapScene.width(), self.minimapScene.height())
-		self.minimapView.setSceneRect(0,0,self.minimapScene.width(), self.minimapScene.height())
+		self.minimapView.setFixedSize(self.minimapScene.width() - 0, self.minimapScene.height() - 0)
+		self.minimapView.setSceneRect(0,0,self.minimapScene.width(), self.minimapScene.height()) #temporarily changed for experimentation
+
+
+		#SWAPDRONEVIEW:to switch the drone and map views: swap scene rect dimensions (at least for minimap) 
 
 		self.layout.addWidget(self.minimapView,1,1,14,13);
 
@@ -486,6 +490,7 @@ class SimulationWindow(QWidget):
 		#self.cameraTabs.setStyleSheet("border: 4px inset grey")
 		self.setLayout(self.layout)
 
+		#SWAPDRONEVIEW: might be harder to swap the drone images since they are an integrated qt widged
 
 		#Human push -------------------------
 
@@ -935,6 +940,7 @@ class SimulationWindow(QWidget):
 		# self.dronePixMap.emit(self.image)
 		# nimage = QPixmap.fromImage(self.image)
 		if self.currentCamTab is 0:
+
 			self.cameraFeed1.setScaledContents(True); 
 			self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 			self.cameraFeed1.setPixmap(QPixmap(self.image))
@@ -977,7 +983,11 @@ class SimulationWindow(QWidget):
 						self.teleportNeeded = True
 				else:
 						self.lblTeleport.setVisible(False)
+
+
+
 '''
+
 
 def main():
 		app = QApplication(sys.argv)
