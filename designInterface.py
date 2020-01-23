@@ -171,6 +171,7 @@ def imageMouseRelease(QMouseEvent,wind):
 
 #Code for mose basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
+
 	tmp = [(QwheelEvent.x()),(QwheelEvent.y())];
 	#x = int(math.floor(float(tmp[0])/float(wind.pix.width())*wind.res))
 	#y = int(math.floor(float(tmp[1])/float(wind.pix.height())*wind.res))
@@ -185,7 +186,13 @@ def imageMouseScroll(QwheelEvent,wind):
 			wind.sliderTmp = wind.beliefOpacitySlider.value()
 		wind.beliefOpacitySlider.setSliderPosition(0)
 		wind.beliefOpacitySlider.setEnabled(False)
-		wind.pic[x][y].setScale(1)
+
+		trans = QTransform()
+		trans.scale(float(wind.image_w)/float(wind.tileX_len)/8.0,float(wind.image_h)/float(wind.tileY_len)/8.0)
+		wind.pic[x][y].setTransform(trans)
+
+		#wind.pic[x][y].setScale(1.4)
+		wind.pic[x][y].setZValue(10)
 		wind.googleFog[x][y].setScale(wind.res)
 		#wind.fogArray[x][y].setScale(wind.res)
 		wind.iconPlane.setZValue(5)
@@ -386,7 +393,7 @@ class SimulationWindow(QWidget):
 		#make fogPlane
 		self.fogLayer = self.minimapScene.addPixmap(makeFogPlane(self));
 
-		self.pix = QPixmap('images/less_oldFlyoverton.png'); 
+		self.pix = QPixmap('images/overhead_mini.png'); 
 		self.belief = QPixmap('images/less_oldBelief.png')
 		self.old = QPixmap('images/overhead.png')
 
@@ -395,8 +402,8 @@ class SimulationWindow(QWidget):
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 		#self.pic = cutImage(self, self.old,-1)
-		self.pic = readImages(self,self.old,-1)
-		
+		self.pic = readImages(self,self.old,'images/minimap_zoom_images/',-1)
+		#reTile(self,self.pic,10)
 		#belief Layer -----------------
 		self.beliefLayer = self.minimapScene.addPixmap(self.belief);
 		self.topLayer = self.minimapScene.addPixmap(self.pix); 
@@ -408,7 +415,7 @@ class SimulationWindow(QWidget):
 		self.minimapView.setFixedSize(self.minimapScene.width(), self.minimapScene.height())
 		self.minimapView.setSceneRect(0,0,self.minimapScene.width(), self.minimapScene.height())
 
-		self.layout.addWidget(self.minimapView,1,1,14,13);
+		self.layout.addWidget(self.minimapView,1,1,13,13);
 
 		self.pix = makeCopyWithAlpha(self.pix,255)
 
