@@ -1,0 +1,271 @@
+"Extent": [1000,1000]
+
+#Note: Node location ONLY are in Y,X
+#All else should be X,Y
+
+"Nodes":
+  0:
+    loc: [-15, -470]
+    neighbors: [52, 45,1]
+
+  1:
+    loc: [176,-470]
+    neighbors: [0,2,6]
+
+  2:
+    loc: [253,-470]
+    neighbors: [1,3,7]
+
+  3:
+    loc: [328,-470]
+    neighbors: [2,8,4]  
+    
+  4:
+    loc: [404,-470]
+    neighbors: [3,5,9]
+
+  5:
+    loc: [480,-470]
+    neighbors: [4,10]
+
+  6:
+    loc: [176,-395]
+    neighbors: [1,7,11]
+
+  7:
+    loc: [253,-395]
+    neighbors: [2,6,8,12]
+
+  8:
+    loc: [328,-395]
+    neighbors: [3,7,9,13]
+
+  9:
+    loc: [404,-395]
+    neighbors: [4,8,10,14]
+
+  10:
+    loc: [480, -395]
+    neighbors: [5,9,15]
+
+  11:
+    loc: [176,-319]
+    neighbors: [6,12,16]
+
+  12:
+    loc: [253,-319]
+    neighbors: [7,11,13,17]
+
+  13:
+    loc: [328,-319]
+    neighbors: [8,12,14,18]
+
+  14:
+    loc: [404,-319]
+    neighbors: [9,13,15,19]
+
+  15:
+    loc: [480,-319]
+    neighbors: [10,14,20]
+
+  16:
+    loc: [176,-244]
+    neighbors: [11,17,21]
+
+  17:
+    loc: [253,-244]
+    neighbors: [12,16,18,22]
+
+  18:
+    loc: [328,-244]
+    neighbors: [13,17,19,23]
+
+  19:
+    loc: [404,-244]
+    neighbors: [14,18,20,24]
+
+  20:
+    loc: [480,-244]
+    neighbors: [15,19,25]
+
+  21:
+    loc: [176,-169]
+    neighbors: [44,16,22]
+
+  22:
+    loc: [253,-169]
+    neighbors: [21,17,23]
+
+  23:
+    loc: [328,-169]
+    neighbors: [22,18,24]
+
+  24:
+    loc: [404,-169]
+    neighbors: [23,19,25]
+
+  25:
+    loc: [480,-169]
+    neighbors: [20,24,32]
+
+  26:
+    loc: [-460,423]
+    neighbors: [38,27]
+
+  27:
+    loc: [-201,423]
+    neighbors: [26,28,30]
+
+  28:
+    loc: [-201,310]
+    neighbors: [27,29]
+
+  29:
+    loc: [-312,311]
+    neighbors: [36,28]
+
+  30:
+    loc: [23,423]
+    neighbors: [27,34,31]
+
+  31:
+    loc: [480,423]
+    neighbors: [30,32]
+
+  32:
+    loc: [480,183]
+    neighbors: [31,33,25]
+
+  33:
+    loc: [248,183]
+    neighbors: [32,43,34]
+
+  34:
+    loc: [23,183]
+    neighbors: [33,39,30,35]
+
+  35:
+    loc: [-200,183]
+    neighbors: [34,36,48]
+
+  36:
+    loc: [-312,183]
+    neighbors: [29,35,37]
+
+  37:
+    loc: [-312,70]
+    neighbors: [36,38]
+
+  38:
+    loc: [-460,70]
+    neighbors: [26,37,49]
+
+  39:
+    loc: [23,50]
+    neighbors: [34,40,41]
+
+  40:
+    loc: [-88,50]
+    neighbors: [39,47]
+
+  41:
+    loc: [23,-55]
+    neighbors: [39,42]
+
+  42:
+    loc: [135,-55]
+    neighbors: [41,44,43]
+
+  43:
+    loc: [248,-55]
+    neighbors: [33,42]
+
+  44:
+    loc: [135,-169]
+    neighbors: [42,21,45]
+
+  45:
+    loc: [-15,-169]
+    neighbors: [44,46,0]
+
+  46:
+    loc: [-88,-169]
+    neighbors: [45,47]
+
+  47:
+    loc: [-88,-134]
+    neighbors: [46,48,40]
+
+  48:
+    loc: [-200,-134]
+    neighbors: [35,47,49,51]
+
+  49:
+    loc: [-460,-134]
+    neighbors: [38,48,50]
+
+  50:
+    loc: [-460,-325]
+    neighbors: [49,51]
+
+  51:
+    loc: [-201,-325]
+    neighbors: [50,52,48]
+
+  52:
+    loc: [-201,-470]
+    neighbors: [0,51]
+
+
+  
+
+"HighNodes": [45,44,46,47,48,35,34,33,43,42]
+
+"Water":
+  "Lakes":
+    0:
+      loc: [112, -426]
+      rad: 22
+    1:
+      loc: [-414, -332]
+      rad: 55
+    2:
+      loc: [-357, 363]
+      rad: 22
+
+    3:
+      loc: [-6,-31]
+      rad: 40
+  "Rivers":
+    0:
+      start: [-6, -65]
+      end: [-146, -65]
+    1:
+      start: [-146, -65]
+      end: [-146, -169]
+    2:
+      start: [-146, -169]
+      end: [-365, -169]
+    3:
+      start: [-365, -169]
+      end: [-365, -323]
+
+"Forests":
+  0:
+    lowLeft: [-309,-446]
+    width: 180
+    height: 230
+
+"Deserts":
+
+  0:
+    lowLeft: [-38,-498]
+    width: 528
+    height: 272
+
+  1:
+    lowLeft: [197,-226]
+    width: 291
+    height: 231
+
+

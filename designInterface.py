@@ -188,8 +188,27 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setEnabled(False)
 
 		trans = QTransform()
-		trans.scale(float(wind.image_w)/float(wind.tileX_len)/8.0,float(wind.image_h)/float(wind.tileY_len)/8.0)
+		#trans.scale(1.5, 1.6)
+		print(wind.image_w, " wind_image_w and ", wind.image_h, "wind_image_h")
+		print(wind.tileX_len, " xlen", wind.tileY_len, "ylen")
+
+		trans.scale(float(wind.image_w)/float(wind.tileX_len) / 3.389,float(wind.image_h)/float(wind.tileY_len) / 4.026)
+		'''
+			wind.image_w/h = 639
+			wind.tileX.len = 123
+			wind.tileY.len = 113
+
+			639/123 = 5.19
+			639/113 = 5.655
+
+
+
+
+
+
+		'''
 		wind.pic[x][y].setTransform(trans)
+
 
 		#wind.pic[x][y].setScale(1.4)
 		wind.pic[x][y].setZValue(10)
@@ -297,7 +316,7 @@ class SimulationWindow(QWidget):
 
 		self.game = False; 
 		self.res = 8
-		self.map_size = 4000.0
+		self.map_size = 400.0
 		#self.setGeometry(300, 300, 250, 150)
 		self.setWindowTitle("SI-HARPS BluePrint");
 		self.setStyleSheet("background-color:slategray;")
@@ -338,6 +357,7 @@ class SimulationWindow(QWidget):
 		self.single = True
 		self.new_image = rospy.Subscriber("/Drone1/image_raw", Image, self.SetDroneImage)
 		self.belief_update = rospy.Subscriber("/image_raw", Image, self.belief_callback)
+		self.belief_map = rospy.Subscriber("/belief_map", GMPoints, self.belief_map_callback)
 		self.allSketchX = {}
 		self.allSketchY = {}
 		self.zoomCentx = {}
@@ -393,8 +413,9 @@ class SimulationWindow(QWidget):
 		#make fogPlane
 		self.fogLayer = self.minimapScene.addPixmap(makeFogPlane(self));
 
-		self.pix = QPixmap('images/overhead_mini.png'); 
-		self.belief = QPixmap('images/less_oldBelief.png')
+		self.pix = QPixmap('images/overhead_mini_2.png'); 
+		#using overhead_mini_2 instead of overhead_mini 
+		self.belief = QPixmap('images/testScatter.png')
 		self.old = QPixmap('images/overhead.png')
 
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -801,7 +822,7 @@ class SimulationWindow(QWidget):
 
 
 	def defog(self,pointX,pointY,x,y,obj,direc): 
-		l = 10
+		l = 50
 		pointX = pointX - x*self.tileX_len
 		pointY = pointY - y*self.tileY_len
 		#Without Cutting
@@ -897,6 +918,64 @@ class SimulationWindow(QWidget):
 
 			if(dialog.clickedButton().text() == "Yes"):
 				event.ignore(); '''
+
+	def belief_map_callback(self, msg):
+
+		# self.belief = QPixmap('images/testScatter.png')
+
+		print("belief_map callback")
+
+		fig, ax = plt.subplots()
+
+		x = []
+		y = []
+
+		for m in msg.points:
+			x.append(m.x)
+			y.append(m.y)
+
+		# plt.scatter(x, y, s = 10, c = "red", alpha = 0.1, edgecolors='face')
+		# plt.axis('off')
+
+
+		sp = SubplotParams(left=0., bottom=0., right=1., top=1.)
+		fig = Figure(subplotpars=sp)
+		canvas = FigureCanvas(fig)
+		canvas.setStyleSheet("background-color:transparent;")
+		ax = fig.add_subplot(111)
+		# ax.contourf(np.transpose(c), cmap='viridis', alpha=1)
+		# ax.contourf(c,cmap='viridis',alpha=1);'
+
+		ax.scatter(x, y, s = 10, c = "red", alpha = 0.1, edgecolors='face')
+		ax.axis('off')
+		ax.xaxis.set_visible(False)
+		ax.yaxis.set_visible(False)
+		ax.set_frame_on(False)
+
+
+		ax.invert_yaxis()
+		ax.invert_xaxis()
+		ax.set_axis_off()
+		canvas.draw()
+		#canvas = makeBeliefMap(wind);
+		size = canvas.size()
+		width, height = size.width(), size.height()
+		im = QImage(canvas.buffer_rgba(), width,
+					height, QtGui.QImage.Format_ARGB32)
+		im = im.rgbSwapped()
+		self.belief = QPixmap(im)
+		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		# paintPixToPix(wind.beliefLayer, pm,
+		# 				wind.beliefOpacitySlider.sliderPosition()/100)
+
+
+		# self.belief = QPixmap('images/testScatter.png')
+
+		# self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+
+		print("display image")
+
+		
 
 	def belief_callback(self,msg):
 		print 'naise'
