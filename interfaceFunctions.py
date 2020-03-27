@@ -515,7 +515,9 @@ def zoomIn(wind,x,y):
 		for i in range(0,wind.res):
 			for j in range(0,wind.res):
 				wind.minimapScene.removeItem(wind.pic[i][j])
+				wind.minimapScene.removeItem(wind.googleFog[i][j])
 				wind.minimapScene.removeItem(wind.fogArray[i][j])
+				
 		try:
 			wind.zoom = True
 			point = wind.drone_x*(wind.minimapScene.width()/wind.map_size),wind.drone_y*(wind.minimapScene.height()/wind.map_size)
@@ -529,17 +531,19 @@ def zoomIn(wind,x,y):
 			print('No ROS data')
 		#wind.minimapScene.update()
 		wind.minimapScene.addItem(wind.pic[x][y])
-		#wind.minimapScene.addItem(wind.fogArray[x][y])
+		wind.minimapScene.addItem(wind.fogArray[x][y])
 		wind.minimapScene.addItem(wind.googleFog[x][y])
 		wind.pic[x][y].setPos(0,0)
 		wind.googleFog[x][y].setPos(0,0)
-		wind.googleFog[x][y].setZValue(0)
-		wind.pic[x][y].setZValue(10)
+		wind.fogArray[x][y].setPos(0,0)
+		wind.googleFog[x][y].setZValue(2)
+		wind.fogArray[x][y].setZValue(3)
+
 
 	for name in wind.zoomSketchLabels.keys():
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			updateModels(wind,name,wind.vertNum,False,True); 
-			wind.allSketchPlanes[name].setZValue(1)
+			wind.allSketchPlanes[name].setZValue(5)
 	for name in wind.allDuffelNames:
 		if x == wind.allSketchX[name] and y == wind.allSketchY[name]:
 			drawDuffels(wind,name,wind.zoomCentx[name],wind.zoomCenty[name])
@@ -565,6 +569,7 @@ def drawIcons(wind, name,centx,centy,x,y):
 	painter.drawEllipse(QPointF(wind.rel_x,wind.rel_y), radius, radius);
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
+	wind.allIconPlanes[name].setZValue(5)
 
 
 def drawCameras(wind,item):
@@ -593,7 +598,8 @@ def drawCameras(wind,item):
 	painter.drawImage(x,y, pic,0,0,61,60);
 
 	painter.end()
-	wind.allIconPlanes[item].setPixmap(pm); 
+	wind.allIconPlanes[item].setPixmap(pm);
+	wind.allIconPlanes[item].setZValue(1.1)
 
 
 
@@ -609,7 +615,7 @@ def drawDuffels(wind,name,x,y):
 	painter.drawPolygon(polygon)
 	painter.end()
 	wind.allIconPlanes[name].setPixmap(pm); 
-	wind.allIconPlanes[name].setZValue(1)
+	wind.allIconPlanes[name].setZValue(5)
 
 def findTile(wind,pointX,pointY): # it thinks its absolute
 	x = int(math.floor(pointX/wind.minimapScene.width()*wind.res))

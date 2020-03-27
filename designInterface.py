@@ -156,7 +156,7 @@ def imageMouseMove(QMouseEvent,wind):
 		name = ''
 	
 		planeAddPaint(wind.allSketchPlanes[name],255,wind.points); 
-
+		wind.allSketchPlanes[name].setZValue(5)
 def imageMouseRelease(QMouseEvent,wind):
 	if(wind.sketchingInProgress and wind.sketchListen):
 		name = ''
@@ -188,34 +188,17 @@ def imageMouseScroll(QwheelEvent,wind):
 		wind.beliefOpacitySlider.setEnabled(False)
 
 		trans = QTransform()
-		#trans.scale(1.5, 1.6)
-		print(wind.image_w, " wind_image_w and ", wind.image_h, "wind_image_h")
-		print(wind.tileX_len, " xlen", wind.tileY_len, "ylen")
-
 		trans.scale(float(wind.image_w)/float(wind.tileX_len) / 3.389,float(wind.image_h)/float(wind.tileY_len) / 4.026)
-		'''
-			wind.image_w/h = 639
-			wind.tileX.len = 123
-			wind.tileY.len = 113
 
-			639/123 = 5.19
-			639/113 = 5.655
-
-
-
-
-
-
-		'''
 		wind.pic[x][y].setTransform(trans)
 
 
 		#wind.pic[x][y].setScale(1.4)
-		wind.pic[x][y].setZValue(10)
+		wind.pic[x][y].setZValue(1)
 		wind.googleFog[x][y].setScale(wind.res)
-		#wind.fogArray[x][y].setScale(wind.res)
-		wind.iconPlane.setZValue(5)
-		wind.topLayer.setZValue(-5)
+		wind.fogArray[x][y].setScale(wind.res)
+		wind.minimapScene.removeItem(wind.topLayer)
+
 		for name in wind.sketchLabels.keys():
 			planeFlushPaint(wind.allSketchPlanes[name])
 		for name in wind.zoomSketchLabels.keys():
@@ -225,7 +208,8 @@ def imageMouseScroll(QwheelEvent,wind):
 
 		wind.single = False
 	if QwheelEvent.angleDelta().y() < 0 and wind.single == False:
-		
+		wind.minimapScene.addItem(wind.topLayer)
+
 		wind.single = True
 		wind.beliefOpacitySlider.setEnabled(True)
 		wind.beliefOpacitySlider.setSliderPosition(wind.sliderTmp)
@@ -237,9 +221,9 @@ def imageMouseScroll(QwheelEvent,wind):
 		reTile(wind,wind.googleFog,-2)
 
 		
-		wind.beliefLayer.setZValue(0.5)
-		wind.iconPlane.setZValue(1)
-		wind.topLayer.setZValue(0)
+		wind.beliefLayer.setZValue(2)
+		wind.iconPlane.setZValue(3)
+		wind.topLayer.setZValue(1)
 
 		if wind.zoom == True:
 			for name in wind.zoomSketchLabels.keys():
@@ -254,7 +238,7 @@ def imageMouseScroll(QwheelEvent,wind):
 		try:
 			wind.state.emit(wind.drone_x,wind.drone_y)
 			wind.minimapScene.addItem(wind.robotIcon)
-			wind.robotIcon.setZValue(1)
+			wind.robotIcon.setZValue(2)
 		except:
 			print('No ROS data')
 
@@ -837,7 +821,6 @@ class SimulationWindow(QWidget):
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
 				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 2)):
 					triPoints.append([i,j]); 
-
 		for p in triPoints:
 			points = []
 			if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
@@ -867,9 +850,10 @@ class SimulationWindow(QWidget):
 				planeRemovePaint(self.googleFog[x][y-1],0,points)
 				planeRemovePaint(obj[x][y-1],0,points)
 			else: 
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x][y],0,points)
-				planeRemovePaint(obj[x][y],0,points)
+				if x >= 0 and y >= 0:
+					points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x][y],0,points)
+					planeRemovePaint(obj[x][y],0,points)
 
 	def make_connections(self): 
 		#Handler for final sketches
