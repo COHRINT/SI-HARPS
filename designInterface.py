@@ -401,13 +401,15 @@ class SimulationWindow(QWidget):
 
 		self.pix = QPixmap('images/overhead_mini_2.png'); 
 		#using overhead_mini_2 instead of overhead_mini 
-		self.belief = QPixmap('images/testScatter.png')
+		#self.belief = QPixmap('images/testScatter.png')
+		self.belief=QPixmap(); 
 		self.old = QPixmap('images/overhead.png')
 
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
-		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		#self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		#self.belief = self.belief.scaled(self.map_size,self.map_size)
 		#self.pic = cutImage(self, self.old,-1)
 		self.pic = readImages(self,self.old,'images/minimap_zoom_images/',-1)
 		#reTile(self,self.pic,10)
@@ -824,39 +826,75 @@ class SimulationWindow(QWidget):
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
 				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 2)):
 					triPoints.append([i,j]); 
+		# for p in triPoints:
+		# 	points = []
+		# 	if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
+		# 		p[0] = p[0]-self.tileX_len
+		# 		p[1] = p[1]-self.tileY_len
+		# 		points.append([p[0],p[1]])
+		# 		planeRemovePaint(self.googleFog[x+1][y+1],0,points)
+		# 		planeRemovePaint(obj[x+1][y+1],0,points)
+		# 	elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
+		# 		p[0] = p[0]-self.tileX_len
+		# 		points.append([p[0],p[1]])
+		# 		planeRemovePaint(self.googleFog[x+1][y],0,points)
+		# 		planeRemovePaint(obj[x+1][y],0,points)
+		# 	elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
+		# 		p[1] = p[1]-self.tileY_len
+		# 		points.append([p[0],p[1]])
+		# 		planeRemovePaint(self.googleFog[x][y+1],0,points)
+		# 		planeRemovePaint(obj[x][y+1],0,points)
+		# 	elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
+		# 		p[0] = p[0]+self.tileX_len
+		# 		points.append([p[0],p[1]])
+		# 		planeRemovePaint(self.googleFog[x-1][y],0,points)
+		# 		planeRemovePaint(obj[x-1][y],0,points)
+		# 	elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
+		# 		p[1] = p[1]+self.tileY_len
+		# 		points.append([p[0],p[1]])
+		# 		planeRemovePaint(self.googleFog[x][y-1],0,points)
+		# 		planeRemovePaint(obj[x][y-1],0,points)
+		# 	else: 
+		# 		if x >= 0 and y >= 0:
+		# 			points.append([p[0],p[1]])
+		# 			planeRemovePaint(self.googleFog[x][y],0,points)
+		# 			planeRemovePaint(obj[x][y],0,points)
 		for p in triPoints:
 			points = []
 			if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
 				p[0] = p[0]-self.tileX_len
 				p[1] = p[1]-self.tileY_len
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x+1][y+1],0,points)
-				planeRemovePaint(obj[x+1][y+1],0,points)
+				#points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x+1][y+1],0,[p])
+				planeRemovePaint(obj[x+1][y+1],0,[p])
 			elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
 				p[0] = p[0]-self.tileX_len
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x+1][y],0,points)
-				planeRemovePaint(obj[x+1][y],0,points)
+				#points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x+1][y],0,[p])
+				planeRemovePaint(obj[x+1][y],0,[p])
 			elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
 				p[1] = p[1]-self.tileY_len
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x][y+1],0,points)
-				planeRemovePaint(obj[x][y+1],0,points)
+				#points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x][y+1],0,[p])
+				planeRemovePaint(obj[x][y+1],0,[p])
 			elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
 				p[0] = p[0]+self.tileX_len
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x-1][y],0,points)
-				planeRemovePaint(obj[x-1][y],0,points)
+				#points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x-1][y],0,[p])
+				planeRemovePaint(obj[x-1][y],0,[p])
 			elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
 				p[1] = p[1]+self.tileY_len
-				points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x][y-1],0,points)
-				planeRemovePaint(obj[x][y-1],0,points)
+				#points.append([p[0],p[1]])
+				planeRemovePaint(self.googleFog[x][y-1],0,[p])
+				planeRemovePaint(obj[x][y-1],0,[p])
 			else: 
 				if x >= 0 and y >= 0:
-					points.append([p[0],p[1]])
-					planeRemovePaint(self.googleFog[x][y],0,points)
-					planeRemovePaint(obj[x][y],0,points)
+					#points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x][y],0,[p])
+					planeRemovePaint(obj[x][y],0,[p])
+		#points.append([p[0],p[1]])
+		# planeRemovePaint(self.googleFog[x][y],0,triPoints)
+		# planeRemovePaint(obj[x][y],0,triPoints)
 
 	def make_connections(self): 
 		#Handler for final sketches
@@ -952,6 +990,7 @@ class SimulationWindow(QWidget):
 		im = im.rgbSwapped()
 		self.belief = QPixmap(im)
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		#self.belief = self.belief.scaled(self.map_size,self.map_size)
 		# paintPixToPix(wind.beliefLayer, pm,
 		# 				wind.beliefOpacitySlider.sliderPosition()/100)
 
