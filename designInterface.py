@@ -892,7 +892,7 @@ class SimulationWindow(QWidget):
 					#points.append([p[0],p[1]])
 					planeRemovePaint(self.googleFog[x][y],0,[p])
 					planeRemovePaint(obj[x][y],0,[p])
-		#points.append([p[0],p[1]])
+					
 		# planeRemovePaint(self.googleFog[x][y],0,triPoints)
 		# planeRemovePaint(obj[x][y],0,triPoints)
 
