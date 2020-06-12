@@ -300,7 +300,9 @@ class SimulationWindow(QWidget):
 
 		self.game = False; 
 		self.res = 8
-		self.map_size = 400.0
+		self.map_size = 1000.0
+		self.offset_x = 173.7
+		self.offset_y = 845.6
 		#self.setGeometry(300, 300, 250, 150)
 		self.setWindowTitle("SI-HARPS BluePrint");
 		self.setStyleSheet("background-color:slategray;")
@@ -761,8 +763,9 @@ class SimulationWindow(QWidget):
 
 
 	def state_callback(self,data): #make it emit a signal or 
-		self.drone_x = data.pose.position.x
-		self.drone_y = data.pose.position.y
+		self.drone_x = data.pose.position.x + self.offset_x; 
+		self.drone_y = data.pose.position.y + self.offset_y; 
+		
 		worldRoll, worldPitch, self.worldYaw = euler_from_quaternion([data.pose.orientation.x,
 																 data.pose.orientation.y,
 																 data.pose.orientation.z,
