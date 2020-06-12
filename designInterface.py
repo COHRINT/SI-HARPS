@@ -503,6 +503,7 @@ class SimulationWindow(QWidget):
 		self.tab5.setLayout(self.tab5.layout)
 
 		self.layout.addWidget(self.cameraTabs,1,16,8,14) 
+		#self.cameraTabs.setCurrentIndex(4); 
 		#self.cameraTabs.setStyleSheet("border: 4px inset grey")
 		self.setLayout(self.layout)
 
@@ -655,7 +656,7 @@ class SimulationWindow(QWidget):
 	def camera_switch_client(self):
 		#Camera index might be handy
 		self.currentCamTab = self.cameraTabs.currentIndex()
-		print(self.currentCamTab)
+		print("Swith to tab: {}".format(self.currentCamTab))
 		self.cam_num.publish(self.currentCamTab)
 		# self.new_image.unregister()
 
@@ -892,7 +893,7 @@ class SimulationWindow(QWidget):
 					#points.append([p[0],p[1]])
 					planeRemovePaint(self.googleFog[x][y],0,[p])
 					planeRemovePaint(obj[x][y],0,[p])
-					
+
 		# planeRemovePaint(self.googleFog[x][y],0,triPoints)
 		# planeRemovePaint(obj[x][y],0,triPoints)
 

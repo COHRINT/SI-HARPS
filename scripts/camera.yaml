@@ -1,21 +1,18 @@
 1:
-  x: 100
-  y: 500
-  orientation: 90
+  x: 124
+  y: 78
+  orientation: 147
 
 2:
-  x: 438
-  y: 557
-  orientation: 45
+  x: 185
+  y: 625
+  orientation: 90
 3:
-  x: 838
-  y: 557
-  orientation: 270
-4:
-  x: 438
-  y: 757
-  orientation: 0
-5:
-  x: 438
-  y: 157
+  x: 525
+  y: 410
   orientation: 180
+4:
+  x: 683
+  y: 740
+  orientation: 313
+
