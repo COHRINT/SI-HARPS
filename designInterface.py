@@ -627,10 +627,11 @@ class SimulationWindow(QWidget):
 		f.setPointSize(16) # sets the size to 18
 		self.npcBox.setFont(f)
 
-		self.generateInput()
-		timer = QTimer(self)
-		timer.timeout.connect(self.generateInput)
-		timer.start(self.out['duration'])
+		#Uncomment to activate NPC information -------------------------
+		# self.generateInput()
+		# timer = QTimer(self)
+		# timer.timeout.connect(self.generateInput)
+		# timer.start(self.out['duration'])
 
 		#Add arrow
 		self.thisRobot = QArrow.QArrow(color=QColor(255,0,0,255))
@@ -663,6 +664,7 @@ class SimulationWindow(QWidget):
 	def flash(self):
 		self.npcBox.setStyleSheet("border: 4px inset white")
 		self.npcBox.update()
+
 	def generateInput(self):
 		#Randomizes input for every clause from the yaml
 		self.npcBox.setStyleSheet("border: 4px solid red")
