@@ -595,8 +595,10 @@ class SimulationWindow(QWidget):
 		self.pushButton.setStyleSheet("background-color: green; color: white"); 
 		self.pushLayout.addWidget(self.pushButton,10,21,1,5);
 
-		if(not condition == "Pull"):
-			self.layout.addWidget(pushBox,9,16,2,14)
+		if(self.condition == "Pull"):
+			pushBox.setVisible(False); 
+
+		self.layout.addWidget(pushBox,9,16,2,14)
 
 		#Robot pull --------------------
 		pullLayout = QGridLayout(); 
@@ -629,8 +631,9 @@ class SimulationWindow(QWidget):
 		self.noButton.setStyleSheet("background-color: red; color: white"); 
 		pullLayout.addWidget(self.noButton,13,26,1,4); 
 
-		if(not condition == "Push"):
-			self.layout.addWidget(pullBox,12,16,2,14)
+		if(self.condition == "Push"):
+			pullBox.setVisible(False); 
+		self.layout.addWidget(pullBox,12,16,2,14)
 
 		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
@@ -668,6 +671,7 @@ class SimulationWindow(QWidget):
 		self.npcBox.setReadOnly(True)
 		self.npcBox.setStyleSheet("QLineEdit {background-color: black;}")
 		hbox3.addWidget(self.npcBox)
+		npcGroup.setVisible(False); 
 		self.layout.addWidget(npcGroup,15,16,1,14)
 
 		#Get all values from yaml file
@@ -1171,7 +1175,7 @@ class SimulationWindow(QWidget):
 
 def main():
 		#Conditions: Pull, Push, Both
-		condition = "Pull"; 
+		condition = "Both"; 
 
 		app = QApplication(sys.argv)
 		coretools_app = SimulationWindow(condition)
