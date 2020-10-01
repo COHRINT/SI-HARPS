@@ -299,10 +299,11 @@ class SimulationWindow(QWidget):
 	rightClick = pyqtSignal(int,int)
 	state = pyqtSignal(int,int)
 
-	def __init__(self):
+	def __init__(self, condition = "Both"):
 
 		super(SimulationWindow,self).__init__()
 
+		self.condition = condition; 
 		self.layout = QGridLayout(); 
 		self.setLayout(self.layout); 
 
@@ -594,7 +595,8 @@ class SimulationWindow(QWidget):
 		self.pushButton.setStyleSheet("background-color: green; color: white"); 
 		self.pushLayout.addWidget(self.pushButton,10,21,1,5);
 
-		self.layout.addWidget(pushBox,9,16,2,14)
+		if(not condition == "Pull"):
+			self.layout.addWidget(pushBox,9,16,2,14)
 
 		#Robot pull --------------------
 		pullLayout = QGridLayout(); 
@@ -627,7 +629,8 @@ class SimulationWindow(QWidget):
 		self.noButton.setStyleSheet("background-color: red; color: white"); 
 		pullLayout.addWidget(self.noButton,13,26,1,4); 
 
-		self.layout.addWidget(pullBox,12,16,2,14)
+		if(not condition == "Push"):
+			self.layout.addWidget(pullBox,12,16,2,14)
 
 		#Belief slider --------------------------------
 		sliderLayout = QGridLayout(); 
@@ -1167,8 +1170,11 @@ class SimulationWindow(QWidget):
 
 
 def main():
+		#Conditions: Pull, Push, Both
+		condition = "Pull"; 
+
 		app = QApplication(sys.argv)
-		coretools_app = SimulationWindow()
+		coretools_app = SimulationWindow(condition)
 		signal.signal(signal.SIGINT, lambda *a: app.quit())
 		app.startTimer(200)
 		coretools_app.cameraSketch.emit()
