@@ -275,11 +275,19 @@ def pullNoPressed(wind):
 	wind.pullQuestion.setStyleSheet("background-color: slategray")
 	wind.pullQuestion.setText("Awaiting Query")
 
-def pullIDKPressed(wind):
-	print("Publish IDK Message!!");
-	wind.pullAnswerPub.publish(-1) 
-	wind.pullQuestion.setStyleSheet("background-color: slategray")
-	wind.pullQuestion.setText("Awaiting Query")
+# def pullIDKPressed(wind):
+# 	print("Publish IDK Message!!");
+# 	wind.pullAnswerPub.publish(-1) 
+# 	wind.pullQuestion.setStyleSheet("background-color: slategray")
+# 	wind.pullQuestion.setText("Awaiting Query")
+
+def acceptPressed(wind):
+
+	if(wind.acceptQuest.isChecked()):
+		print("Accepted Question!!"); 
+		wind.acceptQuestPub.publish(1); 
+		wind.acceptQuest.setStyleSheet("background-color: slategray"); 
+
 
 
 class SimulationWindow(QWidget):
@@ -359,6 +367,7 @@ class SimulationWindow(QWidget):
 		self.sketchPub = rospy.Publisher('/Sketch', Sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
+		self.acceptQuestPub = rospy.Publisher("/AcceptQuest", Int16, queue_size = 1); 
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
 		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
@@ -401,14 +410,14 @@ class SimulationWindow(QWidget):
 
 		self.pix = QPixmap('images/overhead_mini_2.png'); 
 		#using overhead_mini_2 instead of overhead_mini 
-		#self.belief = QPixmap('images/testScatter.png')
+		self.belief = QPixmap('images/testScatter.png')
 		self.belief=QPixmap(); 
 		self.old = QPixmap('images/overhead.png')
 
 		self.minimapView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.minimapView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 		self.pix = self.pix.scaled(self.sketchPlane.width(),self.sketchPlane.height())
-		#self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		self.belief = self.belief.scaled(1000,1000)
 		#self.belief = self.belief.scaled(self.map_size,self.map_size)
 		#self.pic = cutImage(self, self.old,-1)
 		self.pic = readImages(self,self.old,'images/minimap_zoom_images/',-1)
@@ -448,6 +457,9 @@ class SimulationWindow(QWidget):
 		self.cameraFeed2 = QLabel(); 
 		self.cameraFeed3 = QLabel();
 		self.cameraFeed4 = QLabel();
+		self.cameraFeed4_2 = QLabel(); 
+		self.cameraFeed4_3 = QLabel(); 
+		self.cameraFeed4_4 = QLabel(); 
 		self.cameraFeed5 = QLabel();
 
 		self.cameraTabs = QTabWidget();
@@ -455,6 +467,9 @@ class SimulationWindow(QWidget):
 		self.tab2 = QWidget()
 		self.tab3 = QWidget()
 		self.tab4 = QWidget()
+		self.tab4_2 = QWidget()
+		self.tab4_3 = QWidget(); 
+		self.tab4_4 = QWidget(); 
 		self.tab5 = QWidget()
 		self.cameraFeed1.setScaledContents(True); 
 		self.cameraFeed1.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
@@ -471,6 +486,19 @@ class SimulationWindow(QWidget):
 		self.cameraFeed4.setScaledContents(True); 
 		self.cameraFeed4.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
 		self.cameraFeed4.setPixmap(QPixmap("images/droneView.png"))
+
+		self.cameraFeed4_2.setScaledContents(True); 
+		self.cameraFeed4_2.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed4_2.setPixmap(QPixmap("images/droneView.png"))
+
+		self.cameraFeed4_3.setScaledContents(True); 
+		self.cameraFeed4_3.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed4_3.setPixmap(QPixmap("images/droneView.png"))
+
+		self.cameraFeed4_4.setScaledContents(True); 
+		self.cameraFeed4_4.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
+		self.cameraFeed4_4.setPixmap(QPixmap("images/droneView.png"))
+
 		
 		self.cameraFeed5.setScaledContents(True); 
 		self.cameraFeed5.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Ignored); 
@@ -480,6 +508,9 @@ class SimulationWindow(QWidget):
 		self.cameraTabs.addTab(self.tab2,"Cam 2")
 		self.cameraTabs.addTab(self.tab3,"Cam 3")
 		self.cameraTabs.addTab(self.tab4,"Cam 4")
+		self.cameraTabs.addTab(self.tab4_2,"Cam 5"); 
+		self.cameraTabs.addTab(self.tab4_3,"Cam 6"); 
+		self.cameraTabs.addTab(self.tab4_4,"Cam 7"); 
 		self.cameraTabs.addTab(self.tab5,"Drone")
 
 		self.tab1.layout = QVBoxLayout(self)
@@ -497,6 +528,18 @@ class SimulationWindow(QWidget):
 		self.tab4.layout = QVBoxLayout(self)
 		self.tab4.layout.addWidget(self.cameraFeed4); 
 		self.tab4.setLayout(self.tab4.layout)
+
+		self.tab4_2.layout = QVBoxLayout(self)
+		self.tab4_2.layout.addWidget(self.cameraFeed4_2); 
+		self.tab4_2.setLayout(self.tab4_2.layout)
+
+		self.tab4_3.layout = QVBoxLayout(self)
+		self.tab4_3.layout.addWidget(self.cameraFeed4_3); 
+		self.tab4_3.setLayout(self.tab4_3.layout)
+
+		self.tab4_4.layout = QVBoxLayout(self)
+		self.tab4_4.layout.addWidget(self.cameraFeed4_4); 
+		self.tab4_4.setLayout(self.tab4_4.layout)
 
 		self.tab5.layout = QVBoxLayout(self)
 		self.tab5.layout.addWidget(self.cameraFeed5); 
@@ -534,6 +577,7 @@ class SimulationWindow(QWidget):
 
 		self.relationsDrop = QComboBox();
 		self.relationsDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
+		self.relationsDrop.addItem("Inside"); 
 		self.relationsDrop.addItem("Near"); 
 		self.relationsDrop.addItem("North of"); 
 		self.relationsDrop.addItem("South of");
@@ -572,9 +616,12 @@ class SimulationWindow(QWidget):
 		self.yesButton.setStyleSheet("background-color: green; color: white"); 
 		pullLayout.addWidget(self.yesButton,13,16,1,4); 
 
-		self.IDKButton = QPushButton("IDK"); 
-		self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
-		pullLayout.addWidget(self.IDKButton,13,21,1,4); 
+		# self.IDKButton = QPushButton("IDK"); 
+		# self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
+		# pullLayout.addWidget(self.IDKButton,13,21,1,4); 
+		self.acceptQuest = QCheckBox("Accept Question");
+		self.acceptQuest.setEnabled(False); 
+		pullLayout.addWidget(self.acceptQuest,13,21,1,4);  
 
 		self.noButton = QPushButton("No");  
 		self.noButton.setStyleSheet("background-color: red; color: white"); 
@@ -590,10 +637,10 @@ class SimulationWindow(QWidget):
 		self.beliefOpacitySlider.setTickInterval(10); 
 		makeBeliefMap(self)
 
-		sliderLayout.addWidget(self.beliefOpacitySlider,0,0); 
+		#sliderLayout.addWidget(self.beliefOpacitySlider,0,0); 
 		belLabel = QLabel("Belief Opacity"); 
 		belLabel.setAlignment(Qt.AlignLeft); 
-		sliderLayout.addWidget(belLabel,0,1,1,2); 
+		#sliderLayout.addWidget(belLabel,0,1,1,2); 
 
 
 		#Sketch slider -------------------------------
@@ -649,10 +696,13 @@ class SimulationWindow(QWidget):
 			dialog.exec_(); 
 
 	def changePullQuestion(self, msg):
-		self.pullQuestion.setStyleSheet("background-color: yellow")
+		self.pullQuestion.setStyleSheet("background-color: gold")
 		print("Pull callback")
 		print(msg.question)
 		self.pullQuestion.setText(msg.question)
+		self.acceptQuest.setStyleSheet("background-color: yellow"); 
+		self.acceptQuest.setChecked(False); 
+		self.acceptQuest.setEnabled(True); 
 
 	def camera_switch_client(self):
 		#Camera index might be handy
@@ -925,7 +975,10 @@ class SimulationWindow(QWidget):
 
 		self.noButton.clicked.connect(lambda: pullNoPressed(self)); 
 
-		self.IDKButton.clicked.connect(lambda: pullIDKPressed(self)); 
+		#self.IDKButton.clicked.connect(lambda: pullIDKPressed(self)); 
+
+		self.acceptQuest.stateChanged.connect(lambda: acceptPressed(self))
+
 
 		self.yesButton.clicked.connect(lambda: pullYesPressed(self)); 
 
@@ -981,8 +1034,8 @@ class SimulationWindow(QWidget):
 		ax.set_frame_on(False)
 
 
-		ax.invert_yaxis()
-		ax.invert_xaxis()
+		#ax.invert_yaxis()
+		#ax.invert_xaxis()
 		ax.set_axis_off()
 		canvas.draw()
 		#canvas = makeBeliefMap(wind);
@@ -993,6 +1046,7 @@ class SimulationWindow(QWidget):
 		im = im.rgbSwapped()
 		self.belief = QPixmap(im)
 		self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
+		makeBeliefMap(self); 
 		#self.belief = self.belief.scaled(self.map_size,self.map_size)
 		# paintPixToPix(wind.beliefLayer, pm,
 		# 				wind.beliefOpacitySlider.sliderPosition()/100)
@@ -1002,12 +1056,13 @@ class SimulationWindow(QWidget):
 
 		# self.belief = self.belief.scaled(self.sketchPlane.width(),self.sketchPlane.height())
 
-		print("display image")
+		#print("display image")
 
 		
 
 	def belief_callback(self,msg):
-		print 'naise'
+		#print 'naise'
+		#print("Belief Updated")
 
 		image_data = msg.data
 		image_height = msg.height
@@ -1066,7 +1121,14 @@ class SimulationWindow(QWidget):
 		elif self.currentCamTab is 3:
 			self.cameraFeed4.setPixmap(QPixmap(self.image))
 		elif self.currentCamTab is 4:
+			self.cameraFeed4_2.setPixmap(QPixmap(self.image)); 
+		elif self.currentCamTab is 5:
+			self.cameraFeed4_3.setPixmap(QPixmap(self.image)); 
+		elif self.currentCamTab is 6:
+			self.cameraFeed4_4.setPixmap(QPixmap(self.image)); 
+		elif self.currentCamTab is 7:
 			self.cameraFeed5.setPixmap(QPixmap(self.image))
+
 		# self.image.setZValue(4)
 '''
 	def state_callback(self, data):
