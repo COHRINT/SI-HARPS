@@ -572,14 +572,24 @@ def drawIcons(wind, name,centx,centy,x,y):
 	wind.allIconPlanes[name].setZValue(5)
 
 
-def drawCameras(wind,item):
+def drawCameras(wind,item, goldColor = False):
 	
 	pm = wind.allIconPlanes[item].pixmap()
 
 	pic = QImage('images/camera.png')
 	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
-	pen = QPen(QColor(255,0,0,255)); 
+	if(goldColor):
+		pen = QPen(QColor(255,223,0,255)); 
+		#mask = pic.createMaskFromColor(QColor(255,255,255,255),Qt.MaskInColor)
+		#mask = pic.createAlphaMask(); 
+		mask = QPixmap('images/camera.png').mask();  
+		p = QPainter(pic); 
+		p.setPen(pen); 
+		p.drawPixmap(pic.rect(),mask,mask.rect()); 
+		p.end(); 
+	else:
+		pen = QPen(QColor(255,0,0,255)); 
 	pen.setWidth(1); 
 	painter.setPen(pen); 
 

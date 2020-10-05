@@ -716,6 +716,15 @@ class SimulationWindow(QWidget):
 		self.currentCamTab = self.cameraTabs.currentIndex()
 		print("Swith to tab: {}".format(self.currentCamTab))
 		self.cam_num.publish(self.currentCamTab)
+
+		for item in self.cameras:
+			if(int(item) == self.currentCamTab):
+				drawCameras(self,item,True); 
+			else:
+				drawCameras(self,item,False); 
+			#print(item); 
+			#drawCameras(self,item)
+
 		# self.new_image.unregister()
 
 	def flash(self):
