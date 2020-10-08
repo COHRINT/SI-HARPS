@@ -372,6 +372,7 @@ class SimulationWindow(QWidget):
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
 		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
+		self.stop = rospy.Subscriber("/stopCon",Int16,self.stop_condition)
 
 		rospy.init_node('camera_view_client1')
 		self.cam_num.publish(0)
@@ -702,6 +703,11 @@ class SimulationWindow(QWidget):
 			dialog.setText('The Video would now pause'); 
 			dialog.exec_(); 
 
+	def stop_condition(self,msg): #Code creates a dialog box once the target has been spotted
+		popup = QMessageBox()
+		popup.setText('TARGET CAPTURED')
+		popup.exec_()
+
 	def changePullQuestion(self, msg):
 		self.pullQuestion.setStyleSheet("background-color: gold")
 		print("Pull callback")
@@ -718,14 +724,14 @@ class SimulationWindow(QWidget):
 		self.cam_num.publish(self.currentCamTab)
 
 		for item in self.cameras:
-			if(int(item) == self.currentCamTab):
+			if(int(item) == self.currentCamTab+1):
 				drawCameras(self,item,True); 
 			else:
 				drawCameras(self,item,False); 
 			#print(item); 
 			#drawCameras(self,item)
 
-		# self.new_image.unregister()
+		# self.new_image.unregister()QMessageBox
 
 	def flash(self):
 		self.npcBox.setStyleSheet("border: 4px inset white")

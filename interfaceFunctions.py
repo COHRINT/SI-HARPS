@@ -580,7 +580,7 @@ def drawCameras(wind,item, goldColor = False):
 	pic = pic.scaled(50,50)
 	painter = QPainter(pm); 
 	if(goldColor):
-		pen = QPen(QColor(255,223,0,255)); 
+		pen = QPen(QColor(255,0,0,255)); 
 		#mask = pic.createMaskFromColor(QColor(255,255,255,255),Qt.MaskInColor)
 		#mask = pic.createAlphaMask(); 
 		mask = QPixmap('images/camera.png').mask();  
