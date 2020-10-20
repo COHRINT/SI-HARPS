@@ -373,12 +373,15 @@ class SimulationWindow(QWidget):
 		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 		self.stop = rospy.Subscriber("/stopCon",Int16,self.stop_condition)
+		# self.stop_push = rospy.Publisher("/stopCon",Int16,self.stop_condition)
 
 		rospy.init_node('camera_view_client1')
 		self.cam_num.publish(0)
 
 		rate = rospy.Rate(10) # 10hz
-		# self.sketchPub = rospy.Publisher('/Sketch', sketch, queue_size=10)
+
+		self.showTime()
+		self.timer.start(1000)
 
 	def resizeEvent(self,event):
 		print("WindowResized"); 
@@ -579,13 +582,13 @@ class SimulationWindow(QWidget):
 
 		self.relationsDrop = QComboBox();
 		self.relationsDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
-		self.relationsDrop.addItem("Inside"); 
-		self.relationsDrop.addItem("Near"); 
-		self.relationsDrop.addItem("North of"); 
-		self.relationsDrop.addItem("South of");
-		self.relationsDrop.addItem("East of");
-		self.relationsDrop.addItem("West of");
-		self.pushLayout.addWidget(self.relationsDrop,9,22,1,3); 
+		self.relationsDrop.addItem("Inside") 
+		self.relationsDrop.addItem("Near")
+		self.relationsDrop.addItem("North of") 
+		self.relationsDrop.addItem("South of")
+		self.relationsDrop.addItem("East of")
+		self.relationsDrop.addItem("West of")
+		self.pushLayout.addWidget(self.relationsDrop,9,22,1,3) 
 
 		self.objectsDrop = QComboBox();
 		self.objectsDrop.setStyleSheet("color: white; padding: 1px 0px 1px 3px;")
@@ -661,26 +664,26 @@ class SimulationWindow(QWidget):
 		sketchOLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
 
-		#NPC information -------------------------
-		
-		npcGroup = QGroupBox()
-		hbox3 = QHBoxLayout()
-		npcGroup.setLayout(hbox3)
-		npcGroup.setStyleSheet("background-color: white; border: 4px inset grey;")
+	#NPC information -------------------------
+		#Currently not implemented
+		# npcGroup = QGroupBox()
+		# hbox3 = QHBoxLayout()
+		# npcGroup.setLayout(hbox3)
+		# npcGroup.setStyleSheet("background-color: white; border: 4px inset grey;")
 
-		self.npcBox = QLineEdit(self)
-		self.npcBox.setReadOnly(True)
-		self.npcBox.setStyleSheet("QLineEdit {background-color: black;}")
-		hbox3.addWidget(self.npcBox)
-		npcGroup.setVisible(False); 
-		self.layout.addWidget(npcGroup,15,16,1,14)
+		# self.npcBox = QLineEdit(self)
+		# self.npcBox.setReadOnly(True)
+		# self.npcBox.setStyleSheet("QLineEdit {background-color: black;}")
+		# hbox3.addWidget(self.npcBox)
+		# npcGroup.setVisible(False); 
+		# self.layout.addWidget(npcGroup,15,16,1,14)
 
-		#Get all values from yaml file
-		with open("scripts/npc.yaml", 'r') as fp:
-			self.out = yaml.load(fp)
-		f = self.npcBox.font()
-		f.setPointSize(16) # sets the size to 18
-		self.npcBox.setFont(f)
+		# #Get all values from yaml file
+		# with open("scripts/npc.yaml", 'r') as fp:
+		# 	self.out = yaml.load(fp)
+		# f = self.npcBox.font()
+		# f.setPointSize(16) # sets the size to 18
+		# self.npcBox.setFont(f)
 
 		#Uncomment to activate NPC information -------------------------
 		# self.generateInput()
@@ -693,7 +696,46 @@ class SimulationWindow(QWidget):
 		self.minimapScene.addItem(self.thisRobot);
 		self.thisRobot.setZValue(2)
 
-		self.layout.addLayout(sliderLayout,15,1,2,14) 
+		self.layout.addLayout(sliderLayout,15,1,2,14)
+
+		#Create Timer box
+		timerLayout = QGridLayout()
+		timerBox = QGroupBox()
+		timerBox.setLayout(timerLayout)
+		timerBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey;}")
+		self.timer = QtCore.QTimer() #Initialize time instance
+		self.timer_label = QLabel('Label')
+		self.timer_label.setStyleSheet("color: orange")
+		self.timer.timeout.connect(self.showTime) #Connect timer text to specific function
+		timerLayout.addWidget(self.timer_label,4,50,1,2)
+		# self.timer_label.font().setPointSize(30)
+        #Show time on the label.
+		self.layout.addWidget(timerBox,14,20,2,8)
+		# self.curr_time = 15*60;
+		self.curr_time = 60
+		
+		f = self.pullQuestion.font(); 
+		f.setPointSize(12); 
+
+	def showTime(self): #Function used to display the time. Will count down backwards from starting time
+		
+		self.curr_time -=1
+		mins = math.floor(self.curr_time/60)
+		secs = self.curr_time-mins*60
+		if secs<10:
+			display_time = ('Drone Battery Remaining %i:0%i' %(mins, secs))
+		else:
+			display_time = ('Drone Battery Remaining %i:%i' %(mins, secs))
+		self.timer_label.setText(display_time)
+		font_thing = self.timer_label.font()
+		font_thing.setPointSize(30) #How to actually set the font??
+
+		if self.curr_time==0: 
+			popup_time = QMessageBox()
+			popup_time.setText('The Drone has Run Out of Battery')
+			popup_time.exec_()
+			rospy.signal_shutdown('Timeout')
+
 
 	def keyPressEvent(self,event): #Future implementation space bar pause
 		#print("ENTER KEY")
@@ -706,6 +748,9 @@ class SimulationWindow(QWidget):
 	def stop_condition(self,msg): #Code creates a dialog box once the target has been spotted
 		popup = QMessageBox()
 		popup.setText('TARGET CAPTURED')
+
+		#TODO: Connect a Timeout stop condition
+
 		popup.exec_()
 
 	def changePullQuestion(self, msg):
