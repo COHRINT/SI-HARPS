@@ -263,15 +263,17 @@ def pushButtonPressed(wind):
 	wind.pushPub.publish(msg)
 
 
-def pullYesPressed(wind):
+def pullYesPressed(wind,msg_count):
 	print("Publish Yes Message!!"); 
-	wind.pullAnswerPub.publish(1)
+	message = pullAnswer(1,msg_count)
+	wind.pullAnswerPub.publish(message)
 	wind.pullQuestion.setStyleSheet("background-color: slategray")
 	wind.pullQuestion.setText("Awaiting Query")
 
-def pullNoPressed(wind):
+def pullNoPressed(wind,msg_count):
 	print("Publish No Message!!");
-	wind.pullAnswerPub.publish(0) 
+	message = pullAnswer(0,msg_count)
+	wind.pullAnswerPub.publish(message) 
 	wind.pullQuestion.setStyleSheet("background-color: slategray")
 	wind.pullQuestion.setText("Awaiting Query")
 
@@ -367,16 +369,18 @@ class SimulationWindow(QWidget):
 		self.pushPub = rospy.Publisher("/Push", push, queue_size = 1)
 		self.sketchPub = rospy.Publisher('/Sketch', Sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
-		self.pullAnswerPub = rospy.Publisher("/PullAnswer", Int16, queue_size=1)
+		self.pullAnswerPub = rospy.Publisher("/PullAnswer", pullAnswer, queue_size=1)
 		self.acceptQuestPub = rospy.Publisher("/AcceptQuest", Int16, queue_size = 1); 
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
 		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
 		self.stop = rospy.Subscriber("/stopCon",Int16,self.stop_condition)
 		# self.stop_push = rospy.Publisher("/stopCon",Int16,self.stop_condition)
+		self.goal = rospy.Subscriber("Drone1/Goal", path, self.startInterfaceTimer)
 
 		rospy.init_node('camera_view_client1')
 		self.cam_num.publish(0)
+		self.msg_count = 0 #Initialize message counter variable
 
 		rate = rospy.Rate(10) # 10hz
 
@@ -393,12 +397,6 @@ class SimulationWindow(QWidget):
 		# 	for key in self.allSketchPlanes.keys():
 		# 		allSketchPlanes[key].pixmap().scaled(self.minimapView.size()); 
 
-	# @pyqtSlot(QImage)
-	# def setDroneImage(self, image):
-	# 	print("Set Image")
-	# 	tab = self.cameraTabs.currentIndex()
-		
-	# 	self.cameraFeed1.setPixmap(QPixmap(image))
 
 	def populateInterface(self):
 
@@ -513,9 +511,9 @@ class SimulationWindow(QWidget):
 		self.cameraTabs.addTab(self.tab2,"Cam 2")
 		self.cameraTabs.addTab(self.tab3,"Cam 3")
 		self.cameraTabs.addTab(self.tab4,"Cam 4")
-		self.cameraTabs.addTab(self.tab4_2,"Cam 5"); 
-		self.cameraTabs.addTab(self.tab4_3,"Cam 6"); 
-		self.cameraTabs.addTab(self.tab4_4,"Cam 7"); 
+		self.cameraTabs.addTab(self.tab4_2,"Cam 5")
+		self.cameraTabs.addTab(self.tab4_3,"Cam 6") 
+		self.cameraTabs.addTab(self.tab4_4,"Cam 7") 
 		self.cameraTabs.addTab(self.tab5,"Drone")
 
 		self.tab1.layout = QVBoxLayout(self)
@@ -622,14 +620,14 @@ class SimulationWindow(QWidget):
 
 		self.yesButton = QPushButton("Yes");  
 		self.yesButton.setStyleSheet("background-color: green; color: white"); 
-		pullLayout.addWidget(self.yesButton,13,16,1,4); 
+		pullLayout.addWidget(self.yesButton,13,21,1,4); 
 
 		# self.IDKButton = QPushButton("IDK"); 
 		# self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
 		# pullLayout.addWidget(self.IDKButton,13,21,1,4); 
 		self.acceptQuest = QCheckBox("Accept Question");
 		self.acceptQuest.setEnabled(False); 
-		pullLayout.addWidget(self.acceptQuest,13,21,1,4);  
+		pullLayout.addWidget(self.acceptQuest,13,16,1,4); 
 
 		self.noButton = QPushButton("No");  
 		self.noButton.setStyleSheet("background-color: red; color: white"); 
@@ -702,7 +700,7 @@ class SimulationWindow(QWidget):
 		timerLayout = QGridLayout()
 		timerBox = QGroupBox()
 		timerBox.setLayout(timerLayout)
-		timerBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey;}")
+		timerBox.setStyleSheet("QGroupBox {background-color: white; border: 4px inset grey; font: 20 }")
 		self.timer = QtCore.QTimer() #Initialize time instance
 		self.timer_label = QLabel('Label')
 		self.timer_label.setStyleSheet("color: orange")
@@ -711,11 +709,18 @@ class SimulationWindow(QWidget):
 		# self.timer_label.font().setPointSize(30)
         #Show time on the label.
 		self.layout.addWidget(timerBox,14,20,2,8)
-		# self.curr_time = 15*60;
-		self.curr_time = 60
+		self.curr_time = 15*60;
+		self.timestart = False
+		# self.curr_time = 60
 		
-		f = self.pullQuestion.font(); 
-		f.setPointSize(12); 
+		# f = self.pullQuestion.font(); 
+		# f.setPointSize(12); 
+
+	def startInterfaceTimer(self,msg): #Function is called when the first goal is sent. Only used to start the interface timer.
+		if self.timestart == False:
+			print('Starting Timer')
+			self.curr_time = 15*60
+			self.timestart = True
 
 	def showTime(self): #Function used to display the time. Will count down backwards from starting time
 		
@@ -749,14 +754,14 @@ class SimulationWindow(QWidget):
 		popup = QMessageBox()
 		popup.setText('TARGET CAPTURED')
 
-		#TODO: Connect a Timeout stop condition
-
 		popup.exec_()
+		rospy.signal_shutdown('Target Captured')
 
 	def changePullQuestion(self, msg):
 		self.pullQuestion.setStyleSheet("background-color: gold")
 		print("Pull callback")
 		print(msg.question)
+		self.msg_count = msg.counter
 		self.pullQuestion.setText(msg.question)
 		self.acceptQuest.setStyleSheet("background-color: yellow"); 
 		self.acceptQuest.setChecked(False); 
@@ -765,7 +770,7 @@ class SimulationWindow(QWidget):
 	def camera_switch_client(self):
 		#Camera index might be handy
 		self.currentCamTab = self.cameraTabs.currentIndex()
-		print("Swith to tab: {}".format(self.currentCamTab))
+		print("Switch to tab: {}".format(self.currentCamTab))
 		self.cam_num.publish(self.currentCamTab)
 
 		for item in self.cameras:
@@ -1040,14 +1045,14 @@ class SimulationWindow(QWidget):
 
 		self.pushButton.clicked.connect(lambda: pushButtonPressed(self)); 
 
-		self.noButton.clicked.connect(lambda: pullNoPressed(self)); 
+		self.noButton.clicked.connect(lambda: pullNoPressed(self,self.msg_count)); 
 
 		#self.IDKButton.clicked.connect(lambda: pullIDKPressed(self)); 
 
 		self.acceptQuest.stateChanged.connect(lambda: acceptPressed(self))
 
 
-		self.yesButton.clicked.connect(lambda: pullYesPressed(self)); 
+		self.yesButton.clicked.connect(lambda: pullYesPressed(self,self.msg_count)); 
 
 	'''def closeEvent(self,event): #Luke's code to never leave the experiment
 		dialog = QMessageBox(); 

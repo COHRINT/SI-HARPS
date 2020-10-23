@@ -65,6 +65,7 @@ find_package(catkin REQUIRED COMPONENTS
    GM.msg
    path.msg
    path_type.msg
+   pullAnswer.msg
  )
 
 ## Generate services in the 'srv' folder
