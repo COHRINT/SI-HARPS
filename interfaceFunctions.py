@@ -470,7 +470,7 @@ def pushButtonPressed(wind):
 	rel = str(wind.relationsDrop.currentText()) 
 	name = str(wind.objectsDrop.currentText());
 	pos = str(wind.positivityDrop.currentText());
-
+	print('PUSH BUTTON PRESSED',rel,name,pos)
 	wind.assumedModel.stateObsUpdate(name,rel,pos); 
 
 	wind.tabs.removeTab(0); 

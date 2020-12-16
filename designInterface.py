@@ -169,7 +169,7 @@ def imageMouseRelease(QMouseEvent,wind):
 		wind.sketchingInProgress = False;
 		#refresh(wind,wind.locationX,wind.locationY)
 
-#Code for mose basic scrolling implentation
+#Code for more basic scrolling implentation
 def imageMouseScroll(QwheelEvent,wind):
 
 	tmp = [(QwheelEvent.x()),(QwheelEvent.y())];
@@ -244,7 +244,6 @@ def imageMouseScroll(QwheelEvent,wind):
 
 def redrawSketches(wind):
 	print("redraw")
-	#print("Redrawing
 	if wind.sketchLabels and not wind.zoom:
 		for name in wind.sketchLabels.keys():
 			updateModels(wind,name,wind.vertNum,False,wind.zoom); 
@@ -277,18 +276,19 @@ def pullNoPressed(wind,msg_count):
 	wind.pullQuestion.setStyleSheet("background-color: slategray")
 	wind.pullQuestion.setText("Awaiting Query")
 
-# def pullIDKPressed(wind):
-# 	print("Publish IDK Message!!");
-# 	wind.pullAnswerPub.publish(-1) 
-# 	wind.pullQuestion.setStyleSheet("background-color: slategray")
-# 	wind.pullQuestion.setText("Awaiting Query")
+def pullIDKPressed(wind,msg_count):
+	print("Publish IDK Message!!");
+	message = pullAnswer(-1,msg_count)
+	wind.pullAnswerPub.publish(message) 
+	wind.pullQuestion.setStyleSheet("background-color: slategray")
+	wind.pullQuestion.setText("Awaiting Query")
 
-def acceptPressed(wind):
+# def acceptPressed(wind):
 
-	if(wind.acceptQuest.isChecked()):
-		print("Accepted Question!!"); 
-		wind.acceptQuestPub.publish(1); 
-		wind.acceptQuest.setStyleSheet("background-color: slategray"); 
+# 	if(wind.acceptQuest.isChecked()):
+# 		print("Accepted Question!!"); 
+# 		wind.acceptQuestPub.publish(1); 
+# 		wind.acceptQuest.setStyleSheet("background-color: slategray"); 
 
 
 
@@ -370,7 +370,7 @@ class SimulationWindow(QWidget):
 		self.sketchPub = rospy.Publisher('/Sketch', Sketch, queue_size=10)
 		self.pullSub = rospy.Subscriber("/Pull", pull, self.changePullQuestion)
 		self.pullAnswerPub = rospy.Publisher("/PullAnswer", pullAnswer, queue_size=1)
-		self.acceptQuestPub = rospy.Publisher("/AcceptQuest", Int16, queue_size = 1); 
+		# self.acceptQuestPub = rospy.Publisher("/AcceptQuest", Int16, queue_size = 1); 
 		#self.GMPointsSub = rospy.Subscriber("/GMPoints", GMPoints) #Will need to add callback in future
 		self.state_sub = rospy.Subscriber("/Drone1/pose", PoseStamped, self.state_callback)
 		#self.GMSub = rospy.Subscriber("/GM", GM) #Will need to add callback in future
@@ -620,14 +620,16 @@ class SimulationWindow(QWidget):
 
 		self.yesButton = QPushButton("Yes");  
 		self.yesButton.setStyleSheet("background-color: green; color: white"); 
-		pullLayout.addWidget(self.yesButton,13,21,1,4); 
+		pullLayout.addWidget(self.yesButton,13,16,1,4); 
 
-		# self.IDKButton = QPushButton("IDK"); 
-		# self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
-		# pullLayout.addWidget(self.IDKButton,13,21,1,4); 
-		self.acceptQuest = QCheckBox("Accept Question");
-		self.acceptQuest.setEnabled(False); 
-		pullLayout.addWidget(self.acceptQuest,13,16,1,4); 
+		self.IDKButton = QPushButton("IDK"); 
+		self.IDKButton.setStyleSheet("background-color: gray; color: white"); 
+		pullLayout.addWidget(self.IDKButton,13,21,1,4);
+
+		#Code for using "accept question" instead of IDK 
+		# self.acceptQuest = QCheckBox("Accept Question");
+		# self.acceptQuest.setEnabled(False); 
+		# pullLayout.addWidget(self.acceptQuest,13,16,1,4); 
 
 		self.noButton = QPushButton("No");  
 		self.noButton.setStyleSheet("background-color: red; color: white"); 
@@ -750,12 +752,18 @@ class SimulationWindow(QWidget):
 			dialog.setText('The Video would now pause'); 
 			dialog.exec_(); 
 
-	def stop_condition(self,msg): #Code creates a dialog box once the target has been spotted
+	def stop_condition(self,msg): #Creates a dialog box once the target has been spotted
+		# mins = math.floor(self.curr_time/60)
+		# secs = self.curr_time-mins*60
+		# text = str('TARGET CAPTURED at %i:%i' %(mins,secs))
+		self.found = True
+		text = str('TARGET CAPTURED')
 		popup = QMessageBox()
 		popup.setText('TARGET CAPTURED')
-
+		# popup.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 		popup.exec_()
-		rospy.signal_shutdown('Target Captured')
+
+		# rospy.signal_shutdown('Target Captured')
 
 	def changePullQuestion(self, msg):
 		self.pullQuestion.setStyleSheet("background-color: gold")
@@ -763,9 +771,9 @@ class SimulationWindow(QWidget):
 		print(msg.question)
 		self.msg_count = msg.counter
 		self.pullQuestion.setText(msg.question)
-		self.acceptQuest.setStyleSheet("background-color: yellow"); 
-		self.acceptQuest.setChecked(False); 
-		self.acceptQuest.setEnabled(True); 
+		# self.acceptQuest.setStyleSheet("background-color: yellow"); 
+		# self.acceptQuest.setChecked(False); 
+		# self.acceptQuest.setEnabled(True); 
 
 	def camera_switch_client(self):
 		#Camera index might be handy
@@ -1047,9 +1055,9 @@ class SimulationWindow(QWidget):
 
 		self.noButton.clicked.connect(lambda: pullNoPressed(self,self.msg_count)); 
 
-		#self.IDKButton.clicked.connect(lambda: pullIDKPressed(self)); 
+		self.IDKButton.clicked.connect(lambda: pullIDKPressed(self,self.msg_count)); 
 
-		self.acceptQuest.stateChanged.connect(lambda: acceptPressed(self))
+		# self.acceptQuest.stateChanged.connect(lambda: acceptPressed(self))
 
 
 		self.yesButton.clicked.connect(lambda: pullYesPressed(self,self.msg_count)); 
@@ -1240,7 +1248,7 @@ class SimulationWindow(QWidget):
 
 def main():
 		#Conditions: Pull, Push, Both
-		condition = "Both"; 
+		condition = sys.argv[1]; 
 
 		app = QApplication(sys.argv)
 		coretools_app = SimulationWindow(condition)
