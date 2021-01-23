@@ -300,6 +300,7 @@ class SimulationWindow(QWidget):
 	beliefPixMap = pyqtSignal(QImage)
 	rightClick = pyqtSignal(int,int)
 	state = pyqtSignal(int,int)
+	captured = pyqtSignal(str)
 
 	def __init__(self, condition = "Both"):
 
@@ -346,6 +347,7 @@ class SimulationWindow(QWidget):
 		self.sliderTmp = 30
 		self.cameras = {}
 		self.countDuffel = 0
+		self.captured = False
 
 		# self.populated = False
 		#self.show();
@@ -663,7 +665,7 @@ class SimulationWindow(QWidget):
 		sketchOLabel = QLabel("Sketch Opacity"); 
 		sketchOLabel.setAlignment(Qt.AlignLeft); 
 		sliderLayout.addWidget(sketchOLabel,1,1,1,2); 
-
+		self.layout.addLayout(sliderLayout,15,1,2,14)
 	#NPC information -------------------------
 		#Currently not implemented
 		# npcGroup = QGroupBox()
@@ -696,8 +698,13 @@ class SimulationWindow(QWidget):
 		self.minimapScene.addItem(self.thisRobot);
 		self.thisRobot.setZValue(2)
 
-		self.layout.addLayout(sliderLayout,15,1,2,14)
+		# #Add capture circle
+		# self.range = QPainter(self)
+		# self.range.setPen(QPen(Qt.green,8,Qt.DashLine))
+		# self.range.drawEllipse(100, 100, 75, 75)
+		# self.minimapScene.addItem(self.range)
 
+		
 		#Create Timer box
 		timerLayout = QGridLayout()
 		timerBox = QGroupBox()
@@ -743,6 +750,16 @@ class SimulationWindow(QWidget):
 			popup_time.exec_()
 			rospy.signal_shutdown('Timeout')
 
+		if self.captured == True:
+			text = str('TARGET CAPTURED at %i:%i' %(mins,secs))
+			# text = str('TARGET CAPTURED')
+			popup = QMessageBox()
+			popup.setText(text)
+			# popup.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+			popup.exec_()
+			rospy.signal_shutdown('Captured')
+			self.captured = False  
+
 
 	def keyPressEvent(self,event): #Future implementation space bar pause
 		#print("ENTER KEY")
@@ -753,15 +770,15 @@ class SimulationWindow(QWidget):
 			dialog.exec_(); 
 
 	def stop_condition(self,msg): #Creates a dialog box once the target has been spotted
+		self.captured = True
 		# mins = math.floor(self.curr_time/60)
 		# secs = self.curr_time-mins*60
 		# text = str('TARGET CAPTURED at %i:%i' %(mins,secs))
-		self.found = True
-		text = str('TARGET CAPTURED')
-		popup = QMessageBox()
-		popup.setText('TARGET CAPTURED')
-		# popup.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		popup.exec_()
+		# text = str('TARGET CAPTURED')
+		# popup = QMessageBox()
+		# popup.setText('TARGET CAPTURED')
+		# # popup.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		# popup.exec_()
 
 		# rospy.signal_shutdown('Target Captured')
 
@@ -867,12 +884,14 @@ class SimulationWindow(QWidget):
 					print("Convex hull catch")
 		#redrawSketches(self)
 
+
 	def cameraSketchClient(self):
 		with open("scripts/camera.yaml", 'r') as fp:
 			self.cameras = yaml.load(fp)
 		for item in self.cameras:
 			self.allIconPlanes[item] = self.minimapScene.addPixmap(makeTransparentPlane(self));
 			drawCameras(self,item)
+
 
 	def rightClickClient(self,x,y):
 		msg = duffel()
@@ -941,6 +960,9 @@ class SimulationWindow(QWidget):
 
 		direc = self.worldYaw*180/math.pi
 		self.defogSignal.emit(drone_x,drone_y,drone_tile_x, drone_tile_y, self.fogArray, direc)
+
+		#Draw capture circle
+		# self.range = drawEllipse(x,y,75,75)
 
 
 	def defog(self,pointX,pointY,x,y,obj,direc): 
@@ -1059,8 +1081,10 @@ class SimulationWindow(QWidget):
 
 		# self.acceptQuest.stateChanged.connect(lambda: acceptPressed(self))
 
-
 		self.yesButton.clicked.connect(lambda: pullYesPressed(self,self.msg_count)); 
+
+		#Stop condition
+		self.captured.connect(self.stop_condition)
 
 	'''def closeEvent(self,event): #Luke's code to never leave the experiment
 		dialog = QMessageBox(); 
