@@ -981,72 +981,43 @@ class SimulationWindow(QWidget):
 				A3 = area(triPoints[0][0],triPoints[0][1],triPoints[1][0],triPoints[1][1],i,j)
 				if (A >= A1 + A2 + A3) or (A >= (A1 + A2 + A3 - 2)):
 					triPoints.append([i,j]); 
-		# for p in triPoints:
-		# 	points = []
-		# 	if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
-		# 		p[0] = p[0]-self.tileX_len
-		# 		p[1] = p[1]-self.tileY_len
-		# 		points.append([p[0],p[1]])
-		# 		planeRemovePaint(self.googleFog[x+1][y+1],0,points)
-		# 		planeRemovePaint(obj[x+1][y+1],0,points)
-		# 	elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
-		# 		p[0] = p[0]-self.tileX_len
-		# 		points.append([p[0],p[1]])
-		# 		planeRemovePaint(self.googleFog[x+1][y],0,points)
-		# 		planeRemovePaint(obj[x+1][y],0,points)
-		# 	elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
-		# 		p[1] = p[1]-self.tileY_len
-		# 		points.append([p[0],p[1]])
-		# 		planeRemovePaint(self.googleFog[x][y+1],0,points)
-		# 		planeRemovePaint(obj[x][y+1],0,points)
-		# 	elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
-		# 		p[0] = p[0]+self.tileX_len
-		# 		points.append([p[0],p[1]])
-		# 		planeRemovePaint(self.googleFog[x-1][y],0,points)
-		# 		planeRemovePaint(obj[x-1][y],0,points)
-		# 	elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
-		# 		p[1] = p[1]+self.tileY_len
-		# 		points.append([p[0],p[1]])
-		# 		planeRemovePaint(self.googleFog[x][y-1],0,points)
-		# 		planeRemovePaint(obj[x][y-1],0,points)
-		# 	else: 
-		# 		if x >= 0 and y >= 0:
-		# 			points.append([p[0],p[1]])
-		# 			planeRemovePaint(self.googleFog[x][y],0,points)
-		# 			planeRemovePaint(obj[x][y],0,points)
-		for p in triPoints:
+
+		for p in triPoints: 
 			points = []
-			if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
-				p[0] = p[0]-self.tileX_len
-				p[1] = p[1]-self.tileY_len
-				#points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x+1][y+1],0,[p])
-				planeRemovePaint(obj[x+1][y+1],0,[p])
-			elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
-				p[0] = p[0]-self.tileX_len
-				#points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x+1][y],0,[p])
-				planeRemovePaint(obj[x+1][y],0,[p])
-			elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
-				p[1] = p[1]-self.tileY_len
-				#points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x][y+1],0,[p])
-				planeRemovePaint(obj[x][y+1],0,[p])
-			elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
-				p[0] = p[0]+self.tileX_len
-				#points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x-1][y],0,[p])
-				planeRemovePaint(obj[x-1][y],0,[p])
-			elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
-				p[1] = p[1]+self.tileY_len
-				#points.append([p[0],p[1]])
-				planeRemovePaint(self.googleFog[x][y-1],0,[p])
-				planeRemovePaint(obj[x][y-1],0,[p])
-			else: 
-				if x >= 0 and y >= 0:
+			try:
+				if p[0] > self.tileX_len and p[1] > self.tileY_len and (x+1)<self.res and (y+1)<self.res:
+					p[0] = p[0]-self.tileX_len
+					p[1] = p[1]-self.tileY_len
 					#points.append([p[0],p[1]])
-					planeRemovePaint(self.googleFog[x][y],0,[p])
-					planeRemovePaint(obj[x][y],0,[p])
+					planeRemovePaint(self.googleFog[x+1][y+1],0,[p])
+					planeRemovePaint(obj[x+1][y+1],0,[p])
+				elif p[0] > self.tileX_len and  p[1] < self.tileY_len and (x+1)<self.res:
+					p[0] = p[0]-self.tileX_len
+					#points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x+1][y],0,[p])
+					planeRemovePaint(obj[x+1][y],0,[p])
+				elif p[0] < self.tileX_len and p[1] > self.tileY_len and (y+1)<self.res:
+					p[1] = p[1]-self.tileY_len
+					#points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x][y+1],0,[p])
+					planeRemovePaint(obj[x][y+1],0,[p])
+				elif p[0] < 0 and p[1] < self.tileY_len and (x-1)>=0:
+					p[0] = p[0]+self.tileX_len
+					#points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x-1][y],0,[p])
+					planeRemovePaint(obj[x-1][y],0,[p])
+				elif p[0] < self.tileX_len and p[1] < 0 and (y-1)>=0:
+					p[1] = p[1]+self.tileY_len
+					#points.append([p[0],p[1]])
+					planeRemovePaint(self.googleFog[x][y-1],0,[p])
+					planeRemovePaint(obj[x][y-1],0,[p])
+				else: 
+					if x >= 0 and y >= 0:
+						#points.append([p[0],p[1]])
+						planeRemovePaint(self.googleFog[x][y],0,[p])
+						planeRemovePaint(obj[x][y],0,[p])
+			except:
+				print('Defogging Request Out of Range',x,y,p)
 
 		# planeRemovePaint(self.googleFog[x][y],0,triPoints)
 		# planeRemovePaint(obj[x][y],0,triPoints)
