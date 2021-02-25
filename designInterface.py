@@ -748,7 +748,7 @@ class SimulationWindow(QWidget):
 			popup_time = QMessageBox()
 			popup_time.setText('The Drone has Run Out of Battery')
 			popup_time.exec_()
-			rospy.signal_shutdown('Timeout')
+			# rospy.signal_shutdown('Timeout')
 
 		if self.captured == True:
 			text = str('TARGET CAPTURED at %i:%i' %(mins,secs))
@@ -757,7 +757,7 @@ class SimulationWindow(QWidget):
 			popup.setText(text)
 			# popup.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 			popup.exec_()
-			rospy.signal_shutdown('Captured')
+			# rospy.signal_shutdown('Captured')
 			self.captured = False  
 
 
